@@ -407,7 +407,8 @@ details[open] .summary-arrow { transform:rotate(90deg); }
     <div class="victory-scores" id="victoryScores"></div>
     <div class="victory-actions">
       <button class="btn-yellow btn-full" id="shareBtn" onclick="shareResult()" style="font-size:15px;padding:14px">📤 Partager les scores</button>
-      <button class="btn-primary btn-full" onclick="resetFromVictory()" style="font-size:15px;padding:14px">🗑 Nouvelle partie</button>
+      <button class="btn-green btn-full" onclick="replayWithSamePlayers()" style="font-size:15px;padding:14px">🔄 Rejouer avec les mêmes joueurs</button>
+      <button class="btn-primary btn-full" onclick="resetFromVictory()" style="font-size:15px;padding:14px">🗑 Nouvelle partie (autres joueurs)</button>
       <button class="btn-ghost btn-sm" onclick="closeVictory()" style="width:100%">↩ Retour aux scores</button>
     </div>
   </div>
@@ -480,6 +481,11 @@ function resetAll(){
   document.getElementById("victoryOverlay").classList.remove("open");window.scrollTo(0,0);
 }
 function resetFromVictory(){document.getElementById("victoryOverlay").classList.remove("open");resetAll();}
+function replayWithSamePlayers(){
+  state.rounds=[];save();
+  document.getElementById("victoryOverlay").classList.remove("open");
+  renderGame();window.scrollTo(0,0);
+}
 
 /* ── Totals ── */
 function totals(){const t={};state.players.forEach(p=>t[p.id]=0);state.rounds.forEach(r=>state.players.forEach(p=>{t[p.id]+=(r[p.id]||0);}));return t;}
