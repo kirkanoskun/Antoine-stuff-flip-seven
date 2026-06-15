@@ -4,127 +4,441 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Flip 7 — Compteur de points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg:#0f1226; --bg2:#171a3a; --card:#1e2350; --card2:#262c63;
-    --accent:#ff5d73; --accent2:#ffd166; --good:#3ddc97; --bad:#ff6b6b;
-    --txt:#f4f6ff; --muted:#9aa1cf; --line:#343a78;
-    --shadow:0 8px 30px rgba(0,0,0,.35);
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    background:radial-gradient(1200px 600px at 50% -10%,#272c66 0%,var(--bg) 55%);
-    color:var(--txt); min-height:100vh; padding:16px; line-height:1.4;
-  }
-  .wrap{max-width:680px;margin:0 auto}
-  header{display:flex;align-items:center;justify-content:center;gap:10px;margin:6px 0 18px}
-  header h1{font-size:26px;margin:0;letter-spacing:.5px}
-  .logo{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;
-    background:linear-gradient(135deg,var(--accent),var(--accent2));color:#1a1030;font-weight:900;font-size:20px;box-shadow:var(--shadow)}
-  h2{font-size:18px;margin:0 0 12px}
-  .panel{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);
-    border-radius:18px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
-  label{display:block;font-size:13px;color:var(--muted);margin:0 0 6px}
-  input[type=text],input[type=number]{
-    width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);
-    background:#11143150;color:var(--txt);font-size:16px;outline:none}
-  input:focus{border-color:var(--accent2)}
-  .row{display:flex;gap:10px;align-items:center}
-  .row > *{flex:1}
-  button{cursor:pointer;border:none;border-radius:12px;font-size:15px;font-weight:700;
-    padding:13px 16px;color:#fff;transition:transform .05s ease, filter .15s ease}
-  button:active{transform:scale(.97)}
-  .btn-primary{background:linear-gradient(135deg,var(--accent),#ff7b8e)}
-  .btn-accent{background:linear-gradient(135deg,#f7a93b,var(--accent2));color:#2a1c00}
-  .btn-good{background:linear-gradient(135deg,#28b487,var(--good));color:#06281c}
-  .btn-ghost{background:#ffffff14;border:1px solid var(--line);color:var(--txt)}
-  .btn-mini{padding:9px 12px;font-size:13px;flex:0 0 auto}
-  .btn-icon{flex:0 0 auto;width:46px;padding:0;height:46px;display:flex;align-items:center;justify-content:center;font-size:18px}
-  .danger{color:var(--bad)}
-  ul{list-style:none;margin:10px 0 0;padding:0}
-  .player-row{display:flex;align-items:center;gap:10px;background:#ffffff0d;border:1px solid var(--line);
-    border-radius:12px;padding:10px 12px;margin-bottom:8px}
-  .player-row .name{flex:1;font-weight:700}
-  .pill{font-size:12px;color:var(--muted);background:#ffffff12;border-radius:20px;padding:3px 9px}
-  .hint{font-size:12px;color:var(--muted);margin-top:8px}
-  .empty{color:var(--muted);text-align:center;padding:14px;font-size:14px}
+/* ── Palette Art Déco Flip 7 ── */
+:root{
+  --cream:#fdf6e3;
+  --cream2:#f5e9c8;
+  --warm:#f0ddb0;
+  --yellow:#f7c62e;
+  --orange:#f08030;
+  --red:#e03818;
+  --teal:#2aabab;
+  --purple:#7c54c8;
+  --green:#28b070;
+  --dark:#1a1008;
+  --mid:#4a340c;
+  --muted:#9a7840;
+  --line:#d4b870;
+  --line2:#c4a050;
+  --white:#fffdf5;
+  --shadow:0 4px 20px rgba(80,40,0,.18);
+  --shadow-l:0 8px 32px rgba(80,40,0,.24);
+}
 
-  /* Scoreboard */
-  .score-card{display:flex;align-items:center;gap:12px;background:linear-gradient(180deg,var(--card2),#1c2052);
-    border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden}
-  .score-card.leader{border-color:var(--accent2);box-shadow:0 0 0 1px var(--accent2) inset}
-  .score-card.winner{border-color:var(--good);box-shadow:0 0 0 2px var(--good) inset}
-  .rank{font-size:13px;color:var(--muted);width:22px;text-align:center;font-weight:800}
-  .sc-name{flex:1;min-width:0}
-  .sc-name b{display:block;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .sc-name .sub{font-size:12px;color:var(--muted)}
-  .sc-total{font-size:26px;font-weight:900;min-width:54px;text-align:right}
-  .progress{height:7px;border-radius:6px;background:#ffffff14;margin-top:7px;overflow:hidden}
-  .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:6px;transition:width .4s}
-  .crown{position:absolute;top:8px;right:10px;font-size:16px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
 
-  /* Round entry */
-  .round-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-  .round-row .nm{flex:1;font-weight:700;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .round-row input{flex:0 0 92px;text-align:center;font-weight:800;font-size:17px}
-  .toolbar{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
-  .toolbar button{flex:1;min-width:130px}
+body{
+  font-family:'Nunito',sans-serif;
+  background:var(--cream);
+  background-image:
+    radial-gradient(circle at 20% 10%, #fce8a020 0%, transparent 50%),
+    radial-gradient(circle at 80% 90%, #f0c86020 0%, transparent 50%);
+  color:var(--dark);
+  min-height:100vh;
+  padding:16px 12px 32px;
+  line-height:1.4;
+}
 
-  /* Modal */
-  .overlay{position:fixed;inset:0;background:#05071ccc;backdrop-filter:blur(3px);display:none;
-    align-items:flex-end;justify-content:center;z-index:50;padding:0}
-  .overlay.open{display:flex}
-  .modal{background:linear-gradient(180deg,var(--card),var(--bg2));width:100%;max-width:680px;
-    border-radius:20px 20px 0 0;border:1px solid var(--line);padding:18px;max-height:92vh;overflow:auto}
-  .modal h3{margin:0 0 4px;font-size:19px}
-  .modal .who{color:var(--accent2);font-weight:800}
-  .grid-num{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;margin:10px 0}
-  .grid-mod{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin:10px 0}
-  .chip{user-select:none;text-align:center;padding:12px 0;border-radius:12px;border:1px solid var(--line);
-    background:#ffffff0d;font-weight:800;font-size:16px;cursor:pointer}
-  .chip.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#1a1030;border-color:transparent}
-  .chip.mod.on{background:linear-gradient(135deg,#42c98a,var(--good));color:#06281c}
-  .chip.x2.on{background:linear-gradient(135deg,#7b5cff,#a98bff);color:#fff}
-  .calc-summary{background:#0c0f29;border:1px solid var(--line);border-radius:14px;padding:14px;margin:12px 0;text-align:center}
-  .calc-summary .big{font-size:40px;font-weight:900}
-  .calc-summary .brk{font-size:13px;color:var(--muted);margin-top:4px}
-  .flip7-badge{display:inline-block;background:linear-gradient(135deg,var(--accent),var(--accent2));
-    color:#1a1030;font-weight:900;padding:4px 12px;border-radius:20px;font-size:13px;margin-top:8px}
-  .seg{display:flex;gap:8px;margin:6px 0 2px}
-  .seg button{flex:1}
-  .modal-actions{display:flex;gap:10px;margin-top:14px}
-  .section-label{font-size:13px;color:var(--muted);margin:14px 0 0;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+/* ── Motif décoratif en fond ── */
+body::before{
+  content:"";
+  position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    repeating-linear-gradient(45deg,#d4b87015 0,#d4b87015 1px,transparent 1px,transparent 28px),
+    repeating-linear-gradient(-45deg,#d4b87015 0,#d4b87015 1px,transparent 1px,transparent 28px);
+}
 
-  /* History */
-  details{background:#ffffff0a;border:1px solid var(--line);border-radius:12px;padding:0 14px;margin-bottom:16px}
-  details summary{cursor:pointer;padding:13px 0;font-weight:700;list-style:none}
-  details summary::-webkit-details-marker{display:none}
-  .htable{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:12px}
-  .htable th,.htable td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line)}
-  .htable th{color:var(--muted);font-weight:700}
-  .htable td.pname{text-align:left;font-weight:700}
-  .htable .bust{color:var(--bad)}
-  .winbanner{background:linear-gradient(135deg,#1c6b4f,#2a8d6a);border:1px solid var(--good);
-    border-radius:16px;padding:16px;text-align:center;margin-bottom:16px;font-size:17px;font-weight:800}
-  .footer-actions{display:flex;gap:10px;margin-top:4px}
-  .small{font-size:13px;font-weight:700;padding:10px 12px}
-  .center{text-align:center}
-  .hidden{display:none!important}
+.wrap{max-width:680px;margin:0 auto;position:relative;z-index:1}
+
+/* ── Header ── */
+header{
+  text-align:center;
+  margin:4px 0 22px;
+  padding:0;
+}
+.header-inner{
+  display:inline-flex;flex-direction:column;align-items:center;gap:2px;
+}
+.logo-badge{
+  background:linear-gradient(160deg,var(--yellow),var(--orange));
+  border:4px solid var(--dark);
+  border-radius:20px;
+  box-shadow:5px 5px 0 var(--dark);
+  padding:10px 28px;
+  display:flex;align-items:baseline;gap:6px;
+  position:relative;
+}
+.logo-badge::before,.logo-badge::after{
+  content:"✦";
+  position:absolute;top:50%;transform:translateY(-50%);
+  font-size:14px;color:var(--dark);opacity:.5;
+}
+.logo-badge::before{left:10px}
+.logo-badge::after{right:10px}
+.logo-flip{font-family:'Fredoka One',cursive;font-size:32px;color:var(--dark);line-height:1}
+.logo-7{
+  font-family:'Fredoka One',cursive;font-size:52px;color:var(--dark);line-height:1;
+  text-shadow:-2px 2px 0 rgba(0,0,0,.2);
+}
+.header-sub{font-size:13px;font-weight:800;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+
+/* ── Panels ── */
+.panel{
+  background:var(--white);
+  border:3px solid var(--dark);
+  border-radius:18px;
+  box-shadow:5px 5px 0 var(--dark);
+  padding:18px 16px;
+  margin-bottom:18px;
+  position:relative;
+}
+.panel-title{
+  font-family:'Fredoka One',cursive;
+  font-size:20px;
+  margin:0 0 14px;
+  color:var(--dark);
+  display:flex;align-items:center;gap:8px;
+}
+.panel-title .icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:34px;height:34px;border-radius:10px;border:2px solid var(--dark);
+  background:linear-gradient(135deg,var(--yellow),var(--orange));
+  font-size:17px;flex:0 0 auto;
+}
+
+/* ── Inputs ── */
+label{display:block;font-size:13px;font-weight:800;color:var(--muted);margin:0 0 6px;text-transform:uppercase;letter-spacing:.5px}
+input[type=text],input[type=number]{
+  width:100%;padding:13px 14px;
+  border:2px solid var(--dark);border-radius:12px;
+  background:var(--cream);color:var(--dark);
+  font-size:16px;font-weight:800;font-family:'Nunito',sans-serif;
+  outline:none;transition:border-color .15s, box-shadow .15s;
+}
+input:focus{border-color:var(--orange);box-shadow:0 0 0 3px #f0803030}
+input::placeholder{color:var(--muted);font-weight:700}
+
+.row{display:flex;gap:10px;align-items:center}
+.row > *{flex:1}
+
+/* ── Buttons ── */
+button{
+  cursor:pointer;border:2px solid var(--dark);
+  border-radius:12px;font-size:15px;font-weight:800;
+  font-family:'Nunito',sans-serif;
+  padding:13px 16px;
+  transition:transform .07s, box-shadow .07s;
+  box-shadow:3px 3px 0 var(--dark);
+  position:relative;
+}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--dark)}
+
+.btn-primary{background:linear-gradient(135deg,var(--red),var(--orange));color:#fff}
+.btn-yellow{background:linear-gradient(135deg,var(--yellow),#f5da60);color:var(--dark)}
+.btn-green{background:linear-gradient(135deg,#1da060,var(--green));color:#fff}
+.btn-teal{background:linear-gradient(135deg,var(--teal),#3dd0d0);color:#fff}
+.btn-ghost{background:var(--cream2);color:var(--dark);border-color:var(--line2)}
+.btn-ghost:active{box-shadow:1px 1px 0 var(--line2)}
+.btn-danger{background:linear-gradient(135deg,#c02010,var(--red));color:#fff}
+
+.btn-mini{padding:9px 11px;font-size:13px;flex:0 0 auto;box-shadow:2px 2px 0 var(--dark)}
+.btn-icon{flex:0 0 auto;width:48px;padding:0;height:48px;
+  display:flex;align-items:center;justify-content:center;font-size:20px}
+
+/* ── Pill ── */
+.pill{
+  font-size:12px;font-weight:800;color:var(--mid);
+  background:var(--warm);border:1px solid var(--line);
+  border-radius:20px;padding:3px 10px;white-space:nowrap;
+}
+
+.hint{font-size:12px;font-weight:700;color:var(--muted);margin:8px 0 0}
+.empty{color:var(--muted);text-align:center;padding:16px;font-size:14px;font-weight:700}
+
+/* ── Player list ── */
+ul{list-style:none;margin:12px 0 0;padding:0}
+.player-row{
+  display:flex;align-items:center;gap:10px;
+  background:var(--cream);border:2px solid var(--line2);
+  border-radius:12px;padding:10px 12px;margin-bottom:8px;
+}
+.player-row .num{
+  width:28px;height:28px;border-radius:8px;
+  border:2px solid var(--dark);
+  background:linear-gradient(135deg,var(--yellow),var(--orange));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fredoka One',cursive;font-size:15px;color:var(--dark);
+  flex:0 0 auto;
+}
+.player-row .name{flex:1;font-weight:800;font-size:16px}
+
+/* ── Start button ── */
+.start-btn{
+  width:100%;padding:17px;font-size:19px;font-family:'Fredoka One',cursive;
+  letter-spacing:.5px;box-shadow:5px 5px 0 var(--dark);
+}
+.start-btn:active{box-shadow:2px 2px 0 var(--dark)}
+
+/* ── Win banner ── */
+.winbanner{
+  background:linear-gradient(135deg,var(--green),#3dd89a);
+  border:3px solid var(--dark);border-radius:18px;
+  box-shadow:5px 5px 0 var(--dark);
+  padding:18px 16px;text-align:center;
+  margin-bottom:18px;
+  font-family:'Fredoka One',cursive;font-size:22px;color:var(--dark);
+  line-height:1.3;
+}
+
+/* ── Scoreboard ── */
+.score-card{
+  display:flex;align-items:center;gap:12px;
+  background:var(--cream);
+  border:2px solid var(--line2);border-radius:14px;
+  padding:12px 14px;margin-bottom:10px;
+  position:relative;overflow:hidden;
+  transition:border-color .2s;
+}
+.score-card.leader{
+  border-color:var(--orange);border-width:3px;
+  background:linear-gradient(180deg,#fff8e8,var(--cream));
+}
+.score-card.winner{
+  border-color:var(--green);border-width:3px;
+  background:linear-gradient(180deg,#e8fff4,var(--cream));
+}
+.rank{
+  font-family:'Fredoka One',cursive;font-size:22px;
+  width:32px;text-align:center;color:var(--muted);
+}
+.rank.r1{color:var(--orange)}
+.sc-avatar{
+  width:38px;height:38px;border-radius:10px;border:2px solid var(--dark);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fredoka One',cursive;font-size:18px;color:#fff;
+  flex:0 0 auto;
+}
+.sc-name-block{flex:1;min-width:0}
+.sc-name-block b{display:block;font-size:17px;font-weight:900;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-name-block .sub{font-size:12px;font-weight:700;color:var(--muted)}
+.sc-total{
+  font-family:'Fredoka One',cursive;font-size:34px;
+  color:var(--dark);min-width:58px;text-align:right;
+  line-height:1;
+}
+.progress{height:6px;border-radius:6px;background:var(--warm);margin-top:5px;overflow:hidden}
+.progress > i{display:block;height:100%;border-radius:6px;
+  background:linear-gradient(90deg,var(--orange),var(--yellow));
+  transition:width .5s cubic-bezier(.2,.8,.3,1.1)}
+.crown{position:absolute;top:7px;right:10px;font-size:18px}
+
+/* ── Round entry ── */
+.round-section-title{
+  font-family:'Fredoka One',cursive;font-size:18px;margin:0 0 12px;
+  display:flex;align-items:center;gap:8px;
+}
+.round-num-badge{
+  background:linear-gradient(135deg,var(--teal),#4dd8d8);
+  border:2px solid var(--dark);border-radius:10px;
+  padding:2px 10px;font-family:'Fredoka One',cursive;font-size:20px;color:var(--dark);
+  box-shadow:2px 2px 0 var(--dark);
+}
+
+.round-row{
+  display:flex;align-items:center;gap:8px;margin-bottom:10px;
+  background:var(--cream);border:2px solid var(--line2);
+  border-radius:12px;padding:8px 10px;
+}
+.round-row .nm{flex:1;font-weight:800;font-size:15px;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.round-row input{
+  flex:0 0 84px;text-align:center;font-weight:900;font-size:18px;
+  font-family:'Fredoka One',cursive;
+  border:2px solid var(--dark);border-radius:10px;padding:8px 4px;
+  background:var(--white);
+}
+.toolbar{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+.toolbar button{flex:1;min-width:130px}
+
+/* ── Footer actions ── */
+.footer-actions{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap}
+.footer-actions button{flex:1;min-width:140px}
+.btn-sm{font-size:13px;padding:10px 12px;box-shadow:2px 2px 0 var(--dark)}
+
+/* ── History ── */
+.history-wrap{margin-top:0}
+details{
+  background:var(--cream);border:2px solid var(--line2);
+  border-radius:12px;padding:0 14px;margin-bottom:0;
+}
+details summary{
+  cursor:pointer;padding:12px 0;
+  font-weight:800;font-size:15px;list-style:none;
+  display:flex;align-items:center;gap:8px;
+}
+details summary::-webkit-details-marker{display:none}
+details summary::before{
+  content:"▶";font-size:11px;color:var(--muted);
+  transition:transform .2s;display:inline-block;
+}
+details[open] summary::before{transform:rotate(90deg)}
+.htable{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px}
+.htable th,.htable td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line)}
+.htable th{color:var(--muted);font-weight:800;text-transform:uppercase;font-size:11px}
+.htable td.pname{text-align:left;font-weight:800}
+.htable .bust{color:var(--red);font-weight:800}
+.htable tr:last-child td{border-bottom:none}
+
+/* ── Round info pill ── */
+#roundInfo{font-size:12px}
+
+/* ── Modal ── */
+.overlay{
+  position:fixed;inset:0;
+  background:#1a100880;
+  backdrop-filter:blur(4px);
+  display:none;align-items:flex-end;justify-content:center;
+  z-index:50;padding:0;
+}
+.overlay.open{display:flex}
+.modal{
+  background:var(--white);
+  width:100%;max-width:680px;
+  border:3px solid var(--dark);border-bottom:none;
+  border-radius:24px 24px 0 0;
+  padding:20px 16px 24px;
+  max-height:92vh;overflow-y:auto;
+  box-shadow:0 -6px 30px rgba(0,0,0,.2);
+}
+.modal-handle{
+  width:44px;height:4px;background:var(--line);border-radius:4px;
+  margin:0 auto 14px;
+}
+.modal h3{
+  font-family:'Fredoka One',cursive;
+  margin:0 0 2px;font-size:21px;
+}
+.modal .who{color:var(--orange)}
+
+.section-label{
+  font-size:11px;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.8px;
+  margin:14px 0 6px;padding-bottom:4px;
+  border-bottom:1px solid var(--line);
+}
+
+/* ── Card grids ── */
+.grid-num{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;margin:0}
+.grid-mod{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px;margin:0}
+
+.chip{
+  user-select:none;text-align:center;
+  padding:13px 0;border-radius:12px;
+  border:2px solid var(--line2);
+  background:var(--cream);
+  font-family:'Fredoka One',cursive;font-size:18px;
+  color:var(--dark);cursor:pointer;
+  transition:transform .07s, box-shadow .07s, background .1s;
+  box-shadow:2px 2px 0 var(--line2);
+}
+.chip:active{transform:translate(1px,1px);box-shadow:none}
+.chip.on{
+  background:linear-gradient(135deg,var(--orange),var(--yellow));
+  border-color:var(--dark);box-shadow:2px 2px 0 var(--dark);color:var(--dark);
+}
+.chip.mod.on{
+  background:linear-gradient(135deg,var(--teal),#5de0e0);
+  border-color:var(--dark);box-shadow:2px 2px 0 var(--dark);color:var(--dark);
+}
+.chip.x2.on{
+  background:linear-gradient(135deg,var(--purple),#a880ff);
+  border-color:var(--dark);box-shadow:2px 2px 0 var(--dark);color:#fff;
+}
+
+/* ── Bust button ── */
+#bustBtn{width:100%;font-size:15px}
+#bustBtn.on{background:linear-gradient(135deg,var(--red),#f04830);color:#fff;border-color:var(--dark)}
+
+/* ── Calc summary ── */
+.calc-summary{
+  background:linear-gradient(160deg,var(--dark),#2a1808);
+  border:3px solid var(--dark);border-radius:16px;
+  padding:16px 14px 12px;margin:14px 0;text-align:center;
+  box-shadow:4px 4px 0 var(--dark);
+}
+.calc-summary .big{
+  font-family:'Fredoka One',cursive;font-size:56px;
+  color:var(--yellow);line-height:1;
+  text-shadow:0 3px 12px rgba(0,0,0,.4);
+}
+.calc-summary .brk{font-size:12px;font-weight:700;color:#c8a060;margin-top:6px}
+.flip7-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:linear-gradient(135deg,var(--red),var(--orange));
+  border:2px solid var(--dark);border-radius:20px;
+  color:#fff;font-weight:900;font-size:13px;
+  padding:5px 14px;margin-top:10px;
+  box-shadow:2px 2px 0 var(--dark);
+  animation:pop .3s cubic-bezier(.2,1.6,.4,1);
+}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:scale(1);opacity:1}}
+
+.modal-actions{display:flex;gap:10px;margin-top:14px}
+.modal-actions button{flex:1}
+
+/* ── Avatar colors cycling ── */
+.av0{background:linear-gradient(135deg,var(--orange),var(--yellow))}
+.av1{background:linear-gradient(135deg,var(--teal),#5de0e0)}
+.av2{background:linear-gradient(135deg,var(--purple),#a880ff)}
+.av3{background:linear-gradient(135deg,var(--red),var(--orange))}
+.av4{background:linear-gradient(135deg,var(--green),#5de890)}
+.av5{background:linear-gradient(135deg,#e06020,var(--yellow))}
+
+/* ── Responsive ── */
+@media(min-width:560px){
+  body{padding:24px 20px 40px}
+  .panel{padding:22px 20px}
+  .modal{padding:22px 22px 30px}
+  .sc-total{font-size:40px;min-width:66px}
+  .grid-num{grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
+}
+@media(min-width:700px){
+  header{margin:12px 0 28px}
+  .logo-flip{font-size:38px}.logo-7{font-size:62px}
+  .logo-badge{padding:12px 36px}
+  .start-btn{font-size:21px;padding:20px}
+  .panel{border-radius:22px}
+}
+
+.hidden{display:none!important}
 </style>
 </head>
 <body>
 <div class="wrap">
+
+  <!-- ══ HEADER ══ -->
   <header>
-    <span class="logo">7</span>
-    <h1>Flip 7 — Scores</h1>
+    <div class="header-inner">
+      <div class="logo-badge">
+        <span class="logo-flip">FLIP</span>
+        <span class="logo-7">7</span>
+      </div>
+      <div class="header-sub">Compteur de points</div>
+    </div>
   </header>
 
-  <!-- ================= SETUP ================= -->
+  <!-- ══════════════════ SETUP ══════════════════ -->
   <section id="setup">
+
     <div class="panel">
-      <h2>👥 Joueurs</h2>
+      <div class="panel-title">
+        <span class="icon">👥</span> Joueurs
+      </div>
       <div class="row">
         <input type="text" id="playerName" placeholder="Nom du joueur" autocomplete="off"
                onkeydown="if(event.key==='Enter')addPlayer()">
@@ -135,68 +449,80 @@
     </div>
 
     <div class="panel">
-      <h2>🎯 Objectif</h2>
+      <div class="panel-title">
+        <span class="icon">🎯</span> Objectif
+      </div>
       <label for="targetScore">Points pour gagner la partie</label>
       <input type="number" id="targetScore" value="200" min="1" inputmode="numeric">
       <p class="hint">Règle officielle : le premier à <b>200 points</b> gagne.</p>
     </div>
 
-    <button class="btn-good" style="width:100%" onclick="startGame()">▶️ Commencer la partie</button>
+    <button class="btn-primary start-btn" onclick="startGame()">▶ Commencer la partie !</button>
+
   </section>
 
-  <!-- ================= GAME ================= -->
+  <!-- ══════════════════ GAME ══════════════════ -->
   <section id="game" class="hidden">
 
     <div id="winBanner" class="winbanner hidden"></div>
 
+    <!-- Classement -->
     <div class="panel">
-      <div class="row" style="align-items:center;margin-bottom:6px">
-        <h2 style="margin:0">🏆 Classement</h2>
-        <span class="pill" id="roundInfo" style="flex:0 0 auto"></span>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div class="panel-title" style="margin:0;flex:1">
+          <span class="icon">🏆</span> Classement
+        </div>
+        <span class="pill" id="roundInfo"></span>
       </div>
       <div id="scoreboard"></div>
     </div>
 
+    <!-- Saisie manche -->
     <div class="panel" id="entryPanel">
-      <h2>➕ Manche <span id="curRound"></span></h2>
-      <p class="hint" style="margin-top:0">Saisis les points de chaque joueur, ou utilise 🃏 pour calculer à partir des cartes.</p>
+      <div class="round-section-title">
+        Manche <span class="round-num-badge" id="curRound"></span>
+      </div>
+      <p class="hint" style="margin:0 0 12px">Saisis les points ou utilise 🃏 pour calculer depuis les cartes.</p>
       <div id="roundEntry"></div>
       <div class="toolbar">
-        <button class="btn-good" onclick="validateRound()">✅ Valider la manche</button>
+        <button class="btn-green" onclick="validateRound()">✅ Valider la manche</button>
         <button class="btn-ghost" onclick="clearRoundInputs()">🧹 Effacer</button>
       </div>
     </div>
 
+    <!-- Historique -->
     <div class="panel">
-      <h2>↩️ Historique &amp; retour arrière</h2>
-      <div class="footer-actions" style="margin-bottom:12px">
-        <button class="btn-accent small" onclick="undoLastRound()">↩️ Annuler la dernière manche</button>
+      <div class="panel-title" style="margin-bottom:10px">
+        <span class="icon">📋</span> Historique
       </div>
-      <div id="history"></div>
+      <div class="footer-actions" style="margin-bottom:12px">
+        <button class="btn-yellow btn-sm" onclick="undoLastRound()">↩ Annuler la dernière manche</button>
+      </div>
+      <div class="history-wrap" id="history"></div>
     </div>
 
-    <div class="footer-actions">
-      <button class="btn-ghost small" style="flex:1" onclick="backToSetup()">⚙️ Modifier joueurs / objectif</button>
-      <button class="btn-ghost small danger" style="flex:1" onclick="resetAll()">🗑️ Nouvelle partie</button>
+    <div class="footer-actions" style="margin-top:0">
+      <button class="btn-ghost btn-sm" onclick="backToSetup()">⚙ Modifier joueurs / objectif</button>
+      <button class="btn-danger btn-sm" onclick="resetAll()">🗑 Nouvelle partie</button>
     </div>
+
   </section>
 </div>
 
-<!-- ================= CARD CALCULATOR MODAL ================= -->
+<!-- ══════════════════ CARD CALC MODAL ══════════════════ -->
 <div class="overlay" id="calcOverlay">
   <div class="modal">
+    <div class="modal-handle"></div>
     <h3>🃏 Calcul de la manche — <span class="who" id="calcWho"></span></h3>
-    <p class="hint" style="margin-top:2px">Sélectionne les cartes retournées par le joueur.</p>
+    <p class="hint" style="margin:2px 0 10px">Sélectionne les cartes retournées par le joueur.</p>
 
-    <div class="seg">
-      <button class="btn-ghost small" id="bustBtn" onclick="toggleBust()">💥 A sauté (0 pt)</button>
-    </div>
+    <button class="btn-ghost" id="bustBtn" onclick="toggleBust()">💥 A sauté (0 point)</button>
 
     <div id="cardArea">
-      <div class="section-label">Cartes chiffres (0 à 12)</div>
+      <div class="section-label">Cartes chiffres — 0 à 12</div>
       <div class="grid-num" id="numGrid"></div>
 
-      <div class="section-label">Modificateurs bonus (s'ajoutent)</div>
+      <div class="section-label">Modificateurs bonus (s'ajoutent au total)</div>
       <div class="grid-mod" id="modGrid"></div>
 
       <div class="section-label">Multiplicateur</div>
@@ -210,83 +536,69 @@
     </div>
 
     <div class="modal-actions">
-      <button class="btn-ghost" style="flex:1" onclick="closeCalc()">Annuler</button>
-      <button class="btn-good" style="flex:1.4" onclick="applyCalc()">Appliquer ce score</button>
+      <button class="btn-ghost" onclick="closeCalc()">Annuler</button>
+      <button class="btn-green" style="flex:1.4" onclick="applyCalc()">Appliquer ce score →</button>
     </div>
   </div>
 </div>
 
 <script>
 "use strict";
-const STORE_KEY = "flip7_state_v1";
+const STORE_KEY="flip7_state_v1";
 
-/* ---------- State ---------- */
-let state = {
-  players: [],          // [{id, name}]
-  target: 200,
-  rounds: [],           // [{ [playerId]: points }]
-  started: false
-};
+/* ── State ── */
+let state={players:[],target:200,rounds:[],started:false};
 
-function uid(){ return Math.random().toString(36).slice(2,9); }
-
-function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} }
+function uid(){return Math.random().toString(36).slice(2,9)}
+function save(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state))}catch(e){}}
 function load(){
-  try{
-    const raw = localStorage.getItem(STORE_KEY);
-    if(raw){ state = Object.assign(state, JSON.parse(raw)); }
-  }catch(e){}
+  try{const raw=localStorage.getItem(STORE_KEY);if(raw)state=Object.assign(state,JSON.parse(raw))}catch(e){}
 }
 
-/* ---------- Setup ---------- */
+/* ── Avatar color ── */
+const AV_COLORS=["av0","av1","av2","av3","av4","av5"];
+function avClass(i){return AV_COLORS[i%AV_COLORS.length]}
+function initials(name){return name.trim().charAt(0).toUpperCase()}
+
+/* ── Setup ── */
 function renderPlayerList(){
-  const ul = document.getElementById("playerList");
-  ul.innerHTML = "";
-  if(state.players.length === 0){
-    ul.innerHTML = '<li class="empty">Aucun joueur pour l\'instant.</li>';
-    return;
-  }
-  state.players.forEach((p,i) => {
-    const li = document.createElement("li");
-    li.className = "player-row";
-    li.innerHTML = `<span class="pill">${i+1}</span>
+  const ul=document.getElementById("playerList");ul.innerHTML="";
+  if(state.players.length===0){ul.innerHTML='<li class="empty">Aucun joueur pour l\'instant.</li>';return}
+  state.players.forEach((p,i)=>{
+    const li=document.createElement("li");li.className="player-row";
+    li.innerHTML=`<span class="num ${avClass(i)}"></span>
       <span class="name"></span>
-      <button class="btn-ghost btn-mini danger" title="Retirer">✕</button>`;
-    li.querySelector(".name").textContent = p.name;
-    li.querySelector("button").onclick = () => removePlayer(p.id);
+      <button class="btn-ghost btn-mini" title="Retirer" style="color:#e03818;min-width:38px">✕</button>`;
+    li.querySelector(".num").textContent=initials(p.name);
+    li.querySelector(".name").textContent=p.name;
+    li.querySelector("button").onclick=()=>removePlayer(p.id);
     ul.appendChild(li);
   });
 }
 
 function addPlayer(){
-  const inp = document.getElementById("playerName");
-  const name = inp.value.trim();
-  if(!name) return;
-  state.players.push({ id: uid(), name });
-  inp.value = "";
-  inp.focus();
-  save(); renderPlayerList();
+  const inp=document.getElementById("playerName");
+  const name=inp.value.trim();if(!name)return;
+  state.players.push({id:uid(),name});inp.value="";inp.focus();
+  save();renderPlayerList();
 }
 
 function removePlayer(id){
-  state.players = state.players.filter(p => p.id !== id);
-  save(); renderPlayerList();
+  state.players=state.players.filter(p=>p.id!==id);save();renderPlayerList();
 }
 
 function startGame(){
-  if(state.players.length < 2){ alert("Ajoute au moins 2 joueurs."); return; }
-  const t = parseInt(document.getElementById("targetScore").value, 10);
-  if(!t || t < 1){ alert("Indique un nombre de points valide pour gagner."); return; }
-  state.target = t;
-  state.started = true;
-  if(!Array.isArray(state.rounds)) state.rounds = [];
-  save();
-  showGame();
+  if(state.players.length<2){alert("Ajoute au moins 2 joueurs.");return}
+  const t=parseInt(document.getElementById("targetScore").value,10);
+  if(!t||t<1){alert("Indique un nombre de points valide pour gagner.");return}
+  state.target=t;state.started=true;
+  if(!Array.isArray(state.rounds))state.rounds=[];
+  save();showGame();
 }
 
 function backToSetup(){
-  state.started = false; save();
-  document.getElementById("targetScore").value = state.target;
+  state.started=false;save();
+  document.getElementById("targetScore").value=state.target;
   renderPlayerList();
   document.getElementById("game").classList.add("hidden");
   document.getElementById("setup").classList.remove("hidden");
@@ -294,87 +606,82 @@ function backToSetup(){
 }
 
 function resetAll(){
-  if(!confirm("Tout effacer et démarrer une nouvelle partie ?")) return;
-  state = { players:[], target:200, rounds:[], started:false };
+  if(!confirm("Tout effacer et démarrer une nouvelle partie ?"))return;
+  state={players:[],target:200,rounds:[],started:false};
   localStorage.removeItem(STORE_KEY);
-  document.getElementById("targetScore").value = 200;
+  document.getElementById("targetScore").value=200;
   renderPlayerList();
   document.getElementById("game").classList.add("hidden");
   document.getElementById("setup").classList.remove("hidden");
   window.scrollTo(0,0);
 }
 
-/* ---------- Totals ---------- */
+/* ── Totals ── */
 function totals(){
-  const t = {};
-  state.players.forEach(p => t[p.id] = 0);
-  state.rounds.forEach(r => {
-    state.players.forEach(p => { t[p.id] += (r[p.id] || 0); });
-  });
+  const t={};state.players.forEach(p=>t[p.id]=0);
+  state.rounds.forEach(r=>state.players.forEach(p=>{t[p.id]+=(r[p.id]||0)}));
   return t;
 }
 
 function winners(t){
-  const reached = state.players.filter(p => t[p.id] >= state.target);
-  if(reached.length === 0) return null;
-  const max = Math.max(...reached.map(p => t[p.id]));
-  return reached.filter(p => t[p.id] === max);
+  const reached=state.players.filter(p=>t[p.id]>=state.target);
+  if(reached.length===0)return null;
+  const max=Math.max(...reached.map(p=>t[p.id]));
+  return reached.filter(p=>t[p.id]===max);
 }
 
-/* ---------- Game render ---------- */
+/* ── Game ── */
 function showGame(){
   document.getElementById("setup").classList.add("hidden");
   document.getElementById("game").classList.remove("hidden");
-  renderGame();
-  window.scrollTo(0,0);
+  renderGame();window.scrollTo(0,0);
 }
 
 function renderGame(){
-  const t = totals();
-  const win = winners(t);
+  const t=totals();const win=winners(t);
 
   // win banner
-  const wb = document.getElementById("winBanner");
+  const wb=document.getElementById("winBanner");
   if(win){
     wb.classList.remove("hidden");
-    const names = win.map(p => p.name).join(" & ");
-    wb.innerHTML = `🎉 ${names} ${win.length>1?"gagnent":"gagne"} la partie avec ${t[win[0].id]} points !`;
+    const names=win.map(p=>p.name).join(" & ");
+    wb.innerHTML=`🎉 ${names} ${win.length>1?"gagnent":"gagne"} la partie avec ${t[win[0].id]} points !`;
     document.getElementById("entryPanel").classList.add("hidden");
-  } else {
+  }else{
     wb.classList.add("hidden");
     document.getElementById("entryPanel").classList.remove("hidden");
   }
 
-  // round info
-  document.getElementById("roundInfo").textContent =
-    `Manche ${state.rounds.length} jouée${state.rounds.length>1?"s":""} • objectif ${state.target}`;
-  document.getElementById("curRound").textContent = "n°" + (state.rounds.length + 1);
+  document.getElementById("roundInfo").textContent=
+    `${state.rounds.length} manche${state.rounds.length>1?"s":""} • objectif ${state.target} pts`;
+  document.getElementById("curRound").textContent=state.rounds.length+1;
 
-  // scoreboard sorted desc
-  const ranking = [...state.players].sort((a,b) => t[b.id] - t[a.id]);
-  const sb = document.getElementById("scoreboard");
-  sb.innerHTML = "";
-  ranking.forEach((p, idx) => {
-    const total = t[p.id];
-    const remaining = Math.max(0, state.target - total);
-    const pct = Math.min(100, Math.round(total / state.target * 100));
-    const hasWon = win && total >= state.target;
-    const isLeader = idx === 0 && total > 0 && !win;
-    const div = document.createElement("div");
-    div.className = "score-card" + (hasWon ? " winner" : (isLeader ? " leader" : ""));
-    const sub = hasWon
-      ? "🏁 Objectif atteint !"
-      : `Encore <b>${remaining}</b> pt${remaining>1?"s":""} pour gagner`;
-    div.innerHTML = `
-      <span class="rank">${idx+1}</span>
-      <div class="sc-name">
+  const ranking=[...state.players].sort((a,b)=>t[b.id]-t[a.id]);
+  const sb=document.getElementById("scoreboard");sb.innerHTML="";
+  ranking.forEach((p,idx)=>{
+    const total=t[p.id];
+    const remaining=Math.max(0,state.target-total);
+    const pct=Math.min(100,Math.round(total/state.target*100));
+    const hasWon=win&&total>=state.target;
+    const isLeader=idx===0&&total>0&&!win;
+    const origIdx=state.players.findIndex(x=>x.id===p.id);
+    const div=document.createElement("div");
+    div.className="score-card"+(hasWon?" winner":(isLeader?" leader":""));
+    const sub=hasWon
+      ?"🏁 Objectif atteint !"
+      :`Encore <b>${remaining}</b> pt${remaining>1?"s":""} pour gagner`;
+    div.innerHTML=`
+      <span class="rank${idx===0?" r1":""}">${idx+1}</span>
+      <div class="sc-avatar ${avClass(origIdx)}"></div>
+      <div class="sc-name-block">
         <b></b>
         <span class="sub">${sub}</span>
         <div class="progress"><i style="width:${pct}%"></i></div>
       </div>
       <div class="sc-total">${total}</div>
-      ${hasWon ? '<span class="crown">👑</span>' : ''}`;
-    div.querySelector("b").textContent = p.name;
+      ${hasWon?'<span class="crown">👑</span>':''}`;
+    div.querySelector(".sc-avatar").textContent=initials(p.name);
+    div.querySelector("b").textContent=p.name;
     sb.appendChild(div);
   });
 
@@ -383,184 +690,153 @@ function renderGame(){
 }
 
 function renderRoundEntry(){
-  const box = document.getElementById("roundEntry");
-  box.innerHTML = "";
-  state.players.forEach(p => {
-    const row = document.createElement("div");
-    row.className = "round-row";
-    row.innerHTML = `
+  const box=document.getElementById("roundEntry");box.innerHTML="";
+  state.players.forEach((p,i)=>{
+    const row=document.createElement("div");row.className="round-row";
+    row.innerHTML=`
+      <div class="sc-avatar ${avClass(i)}" style="width:30px;height:30px;border-radius:8px;font-size:14px;flex:0 0 auto"></div>
       <span class="nm"></span>
-      <button class="btn-accent btn-mini" title="Calculer avec les cartes">🃏</button>
+      <button class="btn-yellow btn-mini" title="Calculer avec les cartes" style="font-size:17px;padding:8px 10px">🃏</button>
       <input type="number" inputmode="numeric" placeholder="0" id="in_${p.id}">`;
-    row.querySelector(".nm").textContent = p.name;
-    row.querySelector("button").onclick = () => openCalc(p.id);
+    row.querySelector(".sc-avatar").textContent=initials(p.name);
+    row.querySelector(".nm").textContent=p.name;
+    row.querySelector("button").onclick=()=>openCalc(p.id);
     box.appendChild(row);
   });
 }
 
 function clearRoundInputs(){
-  state.players.forEach(p => {
-    const el = document.getElementById("in_"+p.id);
-    if(el) el.value = "";
-  });
+  state.players.forEach(p=>{const el=document.getElementById("in_"+p.id);if(el)el.value=""});
 }
 
 function validateRound(){
-  const round = {};
-  let any = false;
-  state.players.forEach(p => {
-    const el = document.getElementById("in_"+p.id);
-    let v = parseInt(el && el.value, 10);
-    if(isNaN(v)) v = 0; else any = true;
-    round[p.id] = v;
+  const round={};let any=false;
+  state.players.forEach(p=>{
+    const el=document.getElementById("in_"+p.id);
+    let v=parseInt(el&&el.value,10);
+    if(isNaN(v))v=0;else any=true;
+    round[p.id]=v;
   });
-  if(!any){
-    if(!confirm("Aucun point saisi — valider une manche à 0 pour tout le monde ?")) return;
-  }
-  state.rounds.push(round);
-  save();
-  clearRoundInputs();
-  renderGame();
-  window.scrollTo({top:0, behavior:"smooth"});
+  if(!any&&!confirm("Aucun point saisi — valider une manche à 0 pour tout le monde ?"))return;
+  state.rounds.push(round);save();clearRoundInputs();
+  renderGame();window.scrollTo({top:0,behavior:"smooth"});
 }
 
 function undoLastRound(){
-  if(state.rounds.length === 0){ alert("Aucune manche à annuler."); return; }
-  if(!confirm("Annuler la dernière manche enregistrée ?")) return;
-  state.rounds.pop();
-  save();
-  renderGame();
+  if(state.rounds.length===0){alert("Aucune manche à annuler.");return}
+  if(!confirm("Annuler la dernière manche enregistrée ?"))return;
+  state.rounds.pop();save();renderGame();
 }
 
 function renderHistory(t){
-  const box = document.getElementById("history");
-  if(state.rounds.length === 0){
-    box.innerHTML = '<div class="empty">Aucune manche jouée pour l\'instant.</div>';
-    return;
-  }
-  let html = '<details open><summary>📊 Détail des manches</summary>';
-  html += '<div style="overflow-x:auto"><table class="htable"><thead><tr><th class="pname">Joueur</th>';
-  state.rounds.forEach((_,i)=> html += `<th>M${i+1}</th>`);
-  html += '<th>Total</th></tr></thead><tbody>';
-  state.players.forEach(p => {
-    html += `<tr><td class="pname">${escapeHtml(p.name)}</td>`;
-    state.rounds.forEach(r => {
-      const v = r[p.id] || 0;
-      html += `<td class="${v===0?'bust':''}">${v}</td>`;
-    });
-    html += `<td><b>${t[p.id]}</b></td></tr>`;
+  const box=document.getElementById("history");
+  if(state.rounds.length===0){box.innerHTML='<div class="empty">Aucune manche jouée pour l\'instant.</div>';return}
+  let html='<details open><summary>📊 Détail des manches</summary>';
+  html+='<div style="overflow-x:auto"><table class="htable"><thead><tr><th class="pname">Joueur</th>';
+  state.rounds.forEach((_,i)=>html+=`<th>M${i+1}</th>`);
+  html+='<th>Total</th></tr></thead><tbody>';
+  state.players.forEach(p=>{
+    html+=`<tr><td class="pname">${escapeHtml(p.name)}</td>`;
+    state.rounds.forEach(r=>{const v=r[p.id]||0;html+=`<td class="${v===0?"bust":""}">${v}</td>`});
+    html+=`<td><b>${t[p.id]}</b></td></tr>`;
   });
-  html += '</tbody></table></div></details>';
-  box.innerHTML = html;
+  html+='</tbody></table></div></details>';
+  box.innerHTML=html;
 }
 
 function escapeHtml(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-/* ---------- Card Calculator ---------- */
-const MODIFIERS = [2,4,6,8,10];
-let calc = { playerId:null, nums:new Set(), mods:new Set(), x2:false, bust:false };
+/* ── Card Calculator ── */
+const MODIFIERS=[2,4,6,8,10];
+let calc={playerId:null,nums:new Set(),mods:new Set(),x2:false,bust:false};
 
 function openCalc(playerId){
-  const p = state.players.find(x => x.id === playerId);
-  calc = { playerId, nums:new Set(), mods:new Set(), x2:false, bust:false };
-  document.getElementById("calcWho").textContent = p.name;
+  const p=state.players.find(x=>x.id===playerId);
+  calc={playerId,nums:new Set(),mods:new Set(),x2:false,bust:false};
+  document.getElementById("calcWho").textContent=p.name;
 
-  // number cards 0-12
-  const ng = document.getElementById("numGrid"); ng.innerHTML = "";
+  const ng=document.getElementById("numGrid");ng.innerHTML="";
   for(let n=0;n<=12;n++){
-    const c = document.createElement("div");
-    c.className = "chip"; c.textContent = n;
-    c.onclick = () => { toggleSet(calc.nums, n); c.classList.toggle("on"); refreshCalc(); };
+    const c=document.createElement("div");c.className="chip";c.textContent=n;
+    c.onclick=()=>{toggleSet(calc.nums,n);c.classList.toggle("on");refreshCalc()};
     ng.appendChild(c);
   }
-  // modifiers
-  const mg = document.getElementById("modGrid"); mg.innerHTML = "";
-  MODIFIERS.forEach(m => {
-    const c = document.createElement("div");
-    c.className = "chip mod"; c.textContent = "+"+m;
-    c.onclick = () => { toggleSet(calc.mods, m); c.classList.toggle("on"); refreshCalc(); };
+  const mg=document.getElementById("modGrid");mg.innerHTML="";
+  MODIFIERS.forEach(m=>{
+    const c=document.createElement("div");c.className="chip mod";c.textContent="+"+m;
+    c.onclick=()=>{toggleSet(calc.mods,m);c.classList.toggle("on");refreshCalc()};
     mg.appendChild(c);
   });
-  // x2
-  const xg = document.getElementById("x2Grid"); xg.innerHTML = "";
-  const x = document.createElement("div");
-  x.className = "chip x2"; x.textContent = "×2";
-  x.onclick = () => { calc.x2 = !calc.x2; x.classList.toggle("on"); refreshCalc(); };
+  const xg=document.getElementById("x2Grid");xg.innerHTML="";
+  const x=document.createElement("div");x.className="chip x2";x.textContent="×2";
+  x.onclick=()=>{calc.x2=!calc.x2;x.classList.toggle("on");refreshCalc()};
   xg.appendChild(x);
 
-  document.getElementById("bustBtn").classList.remove("on","btn-good");
+  const bb=document.getElementById("bustBtn");bb.classList.remove("on");
   document.getElementById("cardArea").classList.remove("hidden");
   refreshCalc();
   document.getElementById("calcOverlay").classList.add("open");
 }
 
-function toggleSet(set, v){ set.has(v) ? set.delete(v) : set.add(v); }
+function toggleSet(set,v){set.has(v)?set.delete(v):set.add(v)}
 
 function toggleBust(){
-  calc.bust = !calc.bust;
-  const b = document.getElementById("bustBtn");
-  b.classList.toggle("on");
-  b.classList.toggle("btn-good", calc.bust);
-  document.getElementById("cardArea").classList.toggle("hidden", calc.bust);
+  calc.bust=!calc.bust;
+  const b=document.getElementById("bustBtn");b.classList.toggle("on");
+  document.getElementById("cardArea").classList.toggle("hidden",calc.bust);
   refreshCalc();
 }
 
 function computeCalc(){
-  if(calc.bust) return { total:0, numSum:0, flip7:false };
-  let numSum = 0;
-  calc.nums.forEach(n => numSum += n);
-  let total = calc.x2 ? numSum*2 : numSum;
-  let modSum = 0; calc.mods.forEach(m => modSum += m);
-  total += modSum;
-  const flip7 = calc.nums.size === 7;
-  if(flip7) total += 15;
-  return { total, numSum, modSum, flip7 };
+  if(calc.bust)return{total:0,numSum:0,flip7:false};
+  let numSum=0;calc.nums.forEach(n=>numSum+=n);
+  let total=calc.x2?numSum*2:numSum;
+  let modSum=0;calc.mods.forEach(m=>modSum+=m);
+  total+=modSum;
+  const flip7=calc.nums.size===7;
+  if(flip7)total+=15;
+  return{total,numSum,modSum,flip7};
 }
 
 function refreshCalc(){
-  const r = computeCalc();
-  document.getElementById("calcTotal").textContent = r.total;
-  document.getElementById("flip7Badge").classList.toggle("hidden", !r.flip7);
+  const r=computeCalc();
+  document.getElementById("calcTotal").textContent=r.total;
+  document.getElementById("flip7Badge").classList.toggle("hidden",!r.flip7);
   let brk;
-  if(calc.bust){
-    brk = "💥 Joueur sauté — 0 point";
-  } else if(calc.nums.size===0 && calc.mods.size===0 && !calc.x2){
-    brk = "Aucune carte sélectionnée";
-  } else {
-    const parts = [];
+  if(calc.bust){brk="💥 Joueur sauté — 0 point"}
+  else if(calc.nums.size===0&&calc.mods.size===0&&!calc.x2){brk="Aucune carte sélectionnée"}
+  else{
+    const parts=[];
     parts.push(`chiffres ${r.numSum}${calc.x2?` ×2 = ${r.numSum*2}`:""}`);
-    if(r.modSum) parts.push(`bonus +${r.modSum}`);
-    if(r.flip7) parts.push("Flip 7 +15");
-    brk = parts.join("  •  ") + `  (${calc.nums.size} carte${calc.nums.size>1?"s":""} chiffre)`;
+    if(r.modSum)parts.push(`bonus +${r.modSum}`);
+    if(r.flip7)parts.push("Flip 7 +15");
+    brk=parts.join("  •  ")+`  (${calc.nums.size} carte${calc.nums.size>1?"s":""})`;
   }
-  document.getElementById("calcBreak").textContent = brk;
+  document.getElementById("calcBreak").textContent=brk;
 }
 
 function applyCalc(){
-  const r = computeCalc();
-  const el = document.getElementById("in_"+calc.playerId);
-  if(el) el.value = r.total;
+  const r=computeCalc();
+  const el=document.getElementById("in_"+calc.playerId);
+  if(el)el.value=r.total;
   closeCalc();
 }
 
-function closeCalc(){
-  document.getElementById("calcOverlay").classList.remove("open");
-}
+function closeCalc(){document.getElementById("calcOverlay").classList.remove("open")}
 
-/* close modal on overlay tap */
-document.getElementById("calcOverlay").addEventListener("click", e => {
-  if(e.target.id === "calcOverlay") closeCalc();
+document.getElementById("calcOverlay").addEventListener("click",e=>{
+  if(e.target.id==="calcOverlay")closeCalc();
 });
 
-/* ---------- Init ---------- */
+/* ── Init ── */
 load();
-if(state.started && state.players.length >= 2){
-  document.getElementById("targetScore").value = state.target;
+if(state.started&&state.players.length>=2){
+  document.getElementById("targetScore").value=state.target;
   showGame();
-} else {
-  document.getElementById("targetScore").value = state.target || 200;
+}else{
+  document.getElementById("targetScore").value=state.target||200;
   renderPlayerList();
 }
 </script>
