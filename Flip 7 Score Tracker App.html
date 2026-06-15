@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flip 7 — Compteur de points</title>
 
 <!-- PWA -->
@@ -63,7 +63,7 @@
 }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Nunito', sans-serif;
+  font-family: 'Nunito', ui-rounded, 'Arial Rounded MT Bold', system-ui, sans-serif;
   font-size: 16px; line-height: 1.5;
   color: var(--ink); min-height: 100vh;
   padding: 16px 12px 48px;
@@ -109,15 +109,15 @@ header { text-align: center; margin: 6px 0 26px; }
 .logo-box::before, .logo-box::after { content:"✦"; font-size:12px; color:var(--ink); opacity:.35; position:absolute; top:50%; transform:translateY(-50%); }
 .logo-box::before { left:10px; } .logo-box::after { right:10px; }
 .logo-text { display:flex; align-items:baseline; gap:4px; justify-content:center; }
-.logo-flip { font-family:'Fredoka One',cursive; font-size:36px; color:var(--ink); line-height:1; letter-spacing:-0.02em; }
-.logo-7    { font-family:'Fredoka One',cursive; font-size:62px; color:var(--ink); line-height:1; letter-spacing:-0.02em; text-shadow:-2px 2px 0 rgba(0,0,0,.13); }
+.logo-flip { font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:36px; color:var(--ink); line-height:1; letter-spacing:-0.02em; }
+.logo-7    { font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:62px; color:var(--ink); line-height:1; letter-spacing:-0.02em; text-shadow:-2px 2px 0 rgba(0,0,0,.13); }
 .header-sub { margin-top:8px; font-size:11px; font-weight:800; color:rgba(255,255,255,.7); letter-spacing:1.8px; text-transform:uppercase; }
 
 /* ═══════════════════════════════════
    PANEL
    ═══════════════════════════════════ */
 .panel { background:var(--white); border:3px solid var(--ink); border-radius:20px; box-shadow:5px 5px 0 var(--ink); padding:18px 16px; margin-bottom:16px; }
-.panel-title { font-family:'Nunito',sans-serif; font-size:18px; font-weight:900; color:var(--ink); display:flex; align-items:center; gap:8px; margin-bottom:14px; letter-spacing:-0.01em; }
+.panel-title { font-family:'Nunito', ui-rounded, system-ui, sans-serif; font-size:18px; font-weight:900; color:var(--ink); display:flex; align-items:center; gap:8px; margin-bottom:14px; letter-spacing:-0.01em; }
 .panel-icon { width:34px; height:34px; border-radius:10px; border:2px solid var(--ink); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-size:16px; background:linear-gradient(135deg,var(--yellow),var(--orange)); }
 
 /* ═══════════════════════════════════
@@ -126,7 +126,7 @@ header { text-align: center; margin: 6px 0 26px; }
 label { display:block; font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin-bottom:6px; }
 input[type=text], input[type=number] {
   width:100%; padding:13px 14px; border:2px solid #CDD3DC; border-radius:12px;
-  background:var(--cream); color:var(--ink); font-size:16px; font-weight:800; font-family:'Nunito',sans-serif; outline:none;
+  background:var(--cream); color:var(--ink); font-size:16px; font-weight:800; font-family:'Nunito', ui-rounded, system-ui, sans-serif; outline:none;
   transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
 }
 input:hover  { border-color:#9CAABB; }
@@ -140,8 +140,11 @@ input::placeholder { color:var(--muted); font-weight:700; }
    ═══════════════════════════════════ */
 button {
   cursor:pointer; border:2px solid var(--ink); border-radius:12px;
-  font-size:14px; font-weight:800; font-family:'Nunito',sans-serif;
+  font-size:14px; font-weight:800; font-family:'Nunito', ui-rounded, system-ui, sans-serif;
   padding:13px 16px; min-height:44px;
+  /* iOS : supprime le délai 300ms et le flash au tap */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out);
   box-shadow:3px 3px 0 var(--ink);
 }
@@ -169,7 +172,7 @@ button:focus-visible { outline:3px solid var(--orange); outline-offset:2px; }
 ul { list-style:none; margin:12px 0 0; }
 .player-row { display:flex; align-items:center; gap:10px; background:var(--cream); border:2px solid var(--border); border-radius:12px; padding:9px 12px; margin-bottom:8px; animation:slideIn var(--dur-normal) var(--ease-out); }
 @keyframes slideIn { from{opacity:0;transform:translateY(-8px) scale(0.98)} to{opacity:1;transform:none} }
-.av { width:32px; height:32px; border-radius:9px; border:2px solid var(--ink); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-family:'Fredoka One',cursive; font-size:15px; }
+.av { width:32px; height:32px; border-radius:9px; border:2px solid var(--ink); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:15px; }
 .player-row .pname { flex:1; font-weight:800; font-size:15px; }
 .empty-state { text-align:center; padding:20px 12px; color:var(--muted); }
 .empty-state .empty-icon { font-size:28px; margin-bottom:6px; }
@@ -182,25 +185,25 @@ ul { list-style:none; margin:12px 0 0; }
 .score-card:hover { transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,80,76,.14); }
 .score-card.leader { border:3px solid var(--orange); background:linear-gradient(180deg,#FFF5EE,var(--white)); }
 .score-card.winner { border:3px solid var(--green); background:linear-gradient(180deg,var(--green-bg),var(--white)); }
-.sc-rank { font-family:'Fredoka One',cursive; font-size:22px; width:28px; text-align:center; color:var(--muted); flex:0 0 auto; }
+.sc-rank { font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:22px; width:28px; text-align:center; color:var(--muted); flex:0 0 auto; }
 .sc-rank.r1 { color:var(--orange); }
-.sc-av { width:40px; height:40px; border-radius:12px; border:2px solid var(--ink); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-family:'Fredoka One',cursive; font-size:19px; }
+.sc-av { width:40px; height:40px; border-radius:12px; border:2px solid var(--ink); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:19px; }
 .sc-body { flex:1; min-width:0; }
 .sc-body b { display:block; font-size:17px; font-weight:900; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; letter-spacing:-0.01em; }
 .sc-body .sub { font-size:12px; font-weight:700; color:var(--muted); margin-top:2px; }
 .progress { height:6px; border-radius:6px; background:#EDF0F4; margin-top:6px; overflow:hidden; }
 .progress > i { display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--orange),var(--yellow)); transition:width var(--dur-slow) var(--ease-out); }
-.sc-total { font-family:'Fredoka One',cursive; font-size:36px; color:var(--ink); min-width:56px; text-align:right; line-height:1; flex:0 0 auto; }
+.sc-total { font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:36px; color:var(--ink); min-width:56px; text-align:right; line-height:1; flex:0 0 auto; }
 .sc-crown { position:absolute; top:8px; right:10px; font-size:17px; }
 
 /* ═══════════════════════════════════
    ROUND ENTRY
    ═══════════════════════════════════ */
-.round-badge { display:inline-block; background:linear-gradient(135deg,var(--teal-dark),var(--teal-bg)); border:2px solid var(--ink); border-radius:10px; padding:1px 12px; font-family:'Fredoka One',cursive; font-size:22px; color:#fff; box-shadow:2px 2px 0 var(--ink); }
+.round-badge { display:inline-block; background:linear-gradient(135deg,var(--teal-dark),var(--teal-bg)); border:2px solid var(--ink); border-radius:10px; padding:1px 12px; font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:22px; color:#fff; box-shadow:2px 2px 0 var(--ink); }
 .round-row { display:flex; align-items:center; gap:8px; background:var(--cream); border:2px solid var(--border); border-radius:12px; padding:8px 10px; margin-bottom:8px; transition:border-color var(--dur-fast) var(--ease-out); }
 .round-row:focus-within { border-color:var(--orange); }
 .round-row .nm { flex:1; font-weight:800; font-size:15px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.round-row input { flex:0 0 80px; text-align:center; font-weight:900; font-size:18px; font-family:'Fredoka One',cursive; border:2px solid var(--ink); border-radius:10px; padding:7px 4px; background:var(--white); }
+.round-row input { flex:0 0 80px; text-align:center; font-weight:900; font-size:18px; font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; border:2px solid var(--ink); border-radius:10px; padding:7px 4px; background:var(--white); }
 .toolbar { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
 .toolbar button { flex:1; min-width:120px; }
 .footer-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:0; }
@@ -236,7 +239,7 @@ details[open] .summary-arrow { transform:rotate(90deg); }
 .section-label { font-size:11px; font-weight:800; color:var(--muted); text-transform:uppercase; letter-spacing:.8px; margin:14px 0 8px; padding-bottom:4px; border-bottom:2px solid #EDF0F4; display:flex; align-items:center; gap:6px; }
 .grid-num { display:grid; grid-template-columns:repeat(auto-fill,minmax(52px,1fr)); gap:8px; }
 .grid-mod { display:grid; grid-template-columns:repeat(auto-fill,minmax(72px,1fr)); gap:8px; }
-.chip { user-select:none; text-align:center; padding:14px 0; border-radius:12px; border:2px solid #CDD3DC; background:var(--cream); font-family:'Fredoka One',cursive; font-size:18px; color:var(--ink); cursor:pointer; min-height:48px; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); box-shadow:2px 2px 0 #C0CADC; }
+.chip { user-select:none; text-align:center; padding:14px 0; border-radius:12px; border:2px solid #CDD3DC; background:var(--cream); font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:18px; color:var(--ink); cursor:pointer; min-height:48px; transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out); box-shadow:2px 2px 0 #C0CADC; }
 .chip:hover  { transform:translateY(-2px); box-shadow:3px 4px 0 #A8B4C8; }
 .chip:active { transform:translate(1px,1px); box-shadow:none; }
 .chip:focus-visible { outline:3px solid var(--orange); outline-offset:2px; }
@@ -246,7 +249,7 @@ details[open] .summary-arrow { transform:rotate(90deg); }
 #bustBtn { width:100%; font-size:14px; font-weight:800; background:var(--white); color:var(--ink); border-color:#C0CADC; }
 #bustBtn.on { background:linear-gradient(135deg,var(--red-dark),var(--red)); color:#fff; border-color:var(--ink); }
 .calc-summary { background:linear-gradient(160deg,var(--ink),#2A3850); border:3px solid var(--ink); border-radius:18px; padding:18px 14px 14px; margin:14px 0; text-align:center; box-shadow:4px 4px 0 var(--ink); }
-.calc-total { font-family:'Fredoka One',cursive; font-size:60px; color:var(--yellow); line-height:1; text-shadow:0 3px 14px rgba(0,0,0,.45); }
+.calc-total { font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:60px; color:var(--yellow); line-height:1; text-shadow:0 3px 14px rgba(0,0,0,.45); }
 .calc-brk { font-size:12px; font-weight:700; color:#7A9AB0; margin-top:6px; }
 .flip7-badge { display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,var(--red-dark),var(--orange)); border:2px solid var(--ink); border-radius:20px; color:#fff; font-weight:900; font-size:13px; padding:5px 14px; margin-top:10px; box-shadow:2px 2px 0 var(--ink); animation:popIn var(--dur-normal) var(--ease-out); }
 @keyframes popIn { from{transform:scale(0.9) translateY(8px);opacity:0} to{transform:none;opacity:1} }
@@ -281,17 +284,17 @@ details[open] .summary-arrow { transform:rotate(90deg); }
 @keyframes victoryPop { from{transform:scale(0.88) translateY(20px);opacity:0} to{transform:none;opacity:1} }
 .victory-crown { font-size:64px; line-height:1; margin-bottom:8px; animation:crownDrop 0.5s var(--ease-out) 0.12s both; }
 @keyframes crownDrop { from{transform:translateY(-16px) scale(0.75);opacity:0} to{transform:none;opacity:1} }
-.victory-winner { font-family:'Fredoka One',cursive; font-size:38px; color:var(--ink); line-height:1.1; letter-spacing:-0.01em; margin-bottom:4px; }
+.victory-winner { font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:38px; color:var(--ink); line-height:1.1; letter-spacing:-0.01em; margin-bottom:4px; }
 .victory-sub { font-size:15px; font-weight:800; color:var(--muted); margin-bottom:16px; }
 .victory-meta { font-size:11px; font-weight:700; color:var(--muted); margin-bottom:14px; text-transform:uppercase; letter-spacing:.8px; }
 .victory-scores { background:var(--cream); border:2px solid var(--border); border-radius:14px; padding:8px 12px; margin-bottom:18px; text-align:left; }
 .victory-score-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid var(--border); }
 .victory-score-row:last-child { border-bottom:none; }
-.vsr-rank { font-family:'Fredoka One',cursive; font-size:18px; width:24px; color:var(--muted); }
+.vsr-rank { font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:18px; width:24px; color:var(--muted); }
 .vsr-rank.r1 { color:var(--orange); }
-.vsr-av { width:28px; height:28px; border-radius:8px; border:2px solid var(--ink); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-family:'Fredoka One',cursive; font-size:13px; }
+.vsr-av { width:28px; height:28px; border-radius:8px; border:2px solid var(--ink); flex:0 0 auto; display:flex; align-items:center; justify-content:center; font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:13px; }
 .vsr-name { flex:1; font-weight:800; font-size:14px; }
-.vsr-pts { font-family:'Fredoka One',cursive; font-size:22px; color:var(--ink); }
+.vsr-pts { font-family:'Fredoka One', ui-rounded, 'Arial Rounded MT Bold', cursive; font-size:22px; color:var(--ink); }
 .victory-actions { display:flex; flex-direction:column; gap:9px; }
 
 /* Win banner (retour depuis victoire) */
