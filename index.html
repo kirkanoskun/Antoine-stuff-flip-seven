@@ -1730,9 +1730,14 @@ document.addEventListener("keydown", e => {
 /* ═══════════════════════════════════════════
    PWA
    ═══════════════════════════════════════════ */
-if ("serviceWorker" in navigator) {
+/* Ouverte en local (file://), la page a une origine « null » : certains
+   navigateurs y lèvent une exception SYNCHRONE, qu'un .catch() ne rattrape
+   pas. L'application doit rester utilisable dans ce cas — elle perd
+   seulement l'installation et le mode hors ligne. */
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch(() => {});
+    try { navigator.serviceWorker.register("./sw.js").catch(() => {}); }
+    catch (e) { /* origine non supportée : sans conséquence */ }
   });
 }
 
