@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flip 7 — Compteur de points</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3DBFBA">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Flip 7">
+<meta name="description" content="Compteur de points pour le jeu de cartes Flip 7, avec la variante Vengeance.">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN TOKENS
+   ═══════════════════════════════════════════ */
+:root {
+  --teal-bg:#3DBFBA; --teal-dark:#2A9994; --teal-light:#5FD4CF;
+  --white:#FFFFFF; --cream:#FDF6E3;
+  --orange:#FF7B3D; --orange-dark:#E06530;
+  --yellow:#F7C62E; --yellow-dark:#D4A820;
+  --red:#E03818; --red-dark:#C02010;
+  --purple:#7C54C8; --purple-dark:#5E3AA6;
+  --green:#28B070; --green-dark:#1D9058; --green-bg:#E9F8E9;
+  --ink:#131D35; --muted:#6B7A90; --border:#E0D4A8;
+
+  --ease-out:cubic-bezier(0.16,1,0.3,1);
+  --dur-fast:150ms; --dur-normal:200ms; --dur-slow:350ms;
+
+  --z-float:10; --z-modal:50; --z-victory:60;
+
+  /* Zones sûres iOS — repli à 0 si non supporté */
+  --sat:env(safe-area-inset-top,0px);
+  --sar:env(safe-area-inset-right,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
+}
+
+/* ═══════════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════════ */
+*,*::before,*::after{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html{scroll-behavior:smooth;background:var(--teal-bg)}
+
+body{
+  font-family:'Nunito',ui-rounded,'Arial Rounded MT Bold',system-ui,sans-serif;
+  font-size:16px; line-height:1.5; color:var(--ink);
+  min-height:100vh; min-height:100dvh;
+  /* Le geste « tirer pour rafraîchir » recharge la page en pleine manche : on le neutralise */
+  overscroll-behavior-y:contain;
+  padding:calc(16px + var(--sat)) calc(12px + var(--sar)) calc(48px + var(--sab)) calc(12px + var(--sal));
+  background:
+    radial-gradient(ellipse 140% 55% at 50% -5%,#6addd8 0%,transparent 50%),
+    radial-gradient(ellipse 70% 40% at 90% 100%,#1f8f8a 0%,transparent 60%),
+    var(--teal-bg);
+  background-attachment:fixed;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.09) 0,rgba(255,255,255,.09) 1px,transparent 1px,transparent 44px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.09) 0,rgba(255,255,255,.09) 1px,transparent 1px,transparent 44px);
+}
+body::after{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.06;
+  background-image:repeating-linear-gradient(45deg,#fff 0,#fff 1px,transparent 1px,transparent 22px);
+}
+/* Verrou de défilement sous une feuille modale */
+body.locked{position:fixed;width:100%;overflow:hidden}
+
+.wrap{max-width:680px;margin:0 auto;position:relative;z-index:var(--z-float)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+  html{scroll-behavior:auto}
+}
+
+/* ═══════════════════════════════════════════
+   HEADER
+   ═══════════════════════════════════════════ */
+header{text-align:center;margin:6px 0 22px}
+.logo-box{
+  display:inline-block;
+  background:linear-gradient(155deg,var(--yellow) 0%,var(--orange) 100%);
+  border:4px solid var(--ink);border-radius:22px;box-shadow:6px 6px 0 var(--ink);
+  padding:12px 32px 10px;position:relative;
+  transition:transform var(--dur-normal) var(--ease-out),box-shadow var(--dur-normal) var(--ease-out);
+}
+.logo-box:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+.logo-box::before,.logo-box::after{content:"✦";font-size:12px;color:var(--ink);opacity:.35;position:absolute;top:50%;transform:translateY(-50%)}
+.logo-box::before{left:10px}.logo-box::after{right:10px}
+.logo-text{display:flex;align-items:baseline;gap:4px;justify-content:center}
+.logo-flip{font-family:'Fredoka One',ui-rounded,'Arial Rounded MT Bold',cursive;font-size:36px;line-height:1;letter-spacing:-.02em}
+.logo-7{font-family:'Fredoka One',ui-rounded,'Arial Rounded MT Bold',cursive;font-size:62px;line-height:1;letter-spacing:-.02em;text-shadow:-2px 2px 0 rgba(0,0,0,.13)}
+.header-sub{margin-top:8px;font-size:11px;font-weight:800;color:rgba(255,255,255,.75);letter-spacing:1.8px;text-transform:uppercase}
+.header-variant{
+  display:inline-block;margin-top:8px;font-size:11px;font-weight:900;letter-spacing:.6px;
+  background:var(--purple);color:#fff;border:2px solid var(--ink);border-radius:20px;
+  padding:3px 12px;box-shadow:2px 2px 0 var(--ink);text-transform:uppercase;
+}
+
+/* ═══════════════════════════════════════════
+   PANEL
+   ═══════════════════════════════════════════ */
+.panel{background:var(--white);border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--ink);padding:18px 16px;margin-bottom:16px}
+.panel-title{font-size:18px;font-weight:900;display:flex;align-items:center;gap:8px;margin-bottom:14px;letter-spacing:-.01em}
+.panel-icon{width:34px;height:34px;border-radius:10px;border:2px solid var(--ink);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:16px;background:linear-gradient(135deg,var(--yellow),var(--orange))}
+
+/* ═══════════════════════════════════════════
+   FORM
+   ═══════════════════════════════════════════ */
+label{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+input[type=text],input[type=number]{
+  width:100%;padding:13px 14px;border:2px solid #CDD3DC;border-radius:12px;
+  background:var(--cream);color:var(--ink);
+  /* 16px minimum : en dessous, Safari iOS zoome automatiquement au focus */
+  font-size:16px;font-weight:800;font-family:inherit;outline:none;
+  transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);
+}
+input:hover{border-color:#9CAABB}
+input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,123,61,.2);background:var(--white)}
+input::placeholder{color:var(--muted);font-weight:700}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1}
+
+/* ═══════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════ */
+button{
+  cursor:pointer;border:2px solid var(--ink);border-radius:12px;
+  font-size:14px;font-weight:800;font-family:inherit;
+  padding:13px 16px;min-height:44px;
+  touch-action:manipulation;
+  transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),filter var(--dur-fast) var(--ease-out);
+  box-shadow:3px 3px 0 var(--ink);
+}
+button:hover{filter:brightness(1.06)}
+button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+button:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+button[disabled]{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
+button[disabled]:active{transform:none;box-shadow:3px 3px 0 var(--ink)}
+.btn-primary{background:linear-gradient(135deg,var(--orange-dark),var(--orange));color:#fff}
+.btn-yellow{background:linear-gradient(135deg,var(--yellow-dark),var(--yellow));color:var(--ink)}
+.btn-green{background:linear-gradient(135deg,var(--green-dark),var(--green));color:#fff}
+.btn-purple{background:linear-gradient(135deg,var(--purple-dark),var(--purple));color:#fff}
+.btn-ghost{background:var(--white);color:var(--ink);border-color:#C0CADC;box-shadow:2px 2px 0 #C0CADC}
+.btn-ghost:active{box-shadow:none}
+.btn-danger{background:linear-gradient(135deg,var(--red-dark),var(--red));color:#fff}
+.btn-icon{flex:0 0 auto;width:48px;height:48px;padding:0;display:flex;align-items:center;justify-content:center;font-size:20px}
+.btn-mini{padding:9px 12px;font-size:13px;flex:0 0 auto;min-height:40px}
+.btn-sm{font-size:13px;padding:10px 14px;min-height:40px}
+.btn-full{width:100%;padding:17px;font-size:18px;font-weight:900;letter-spacing:.3px;box-shadow:5px 5px 0 var(--ink)}
+.btn-full:active{box-shadow:2px 2px 0 var(--ink)}
+
+.pill{font-size:11px;font-weight:800;background:rgba(255,255,255,.25);color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:20px;padding:3px 10px;white-space:nowrap}
+.hint{font-size:12px;font-weight:700;color:var(--muted);margin-top:8px}
+
+/* ═══════════════════════════════════════════
+   VARIANTE — contrôle segmenté
+   ═══════════════════════════════════════════ */
+.seg{display:flex;gap:0;border:3px solid var(--ink);border-radius:14px;overflow:hidden;box-shadow:3px 3px 0 var(--ink)}
+.seg button{
+  flex:1;border:none;border-radius:0;box-shadow:none;min-height:52px;
+  background:var(--cream);color:var(--muted);font-weight:900;font-size:15px;
+}
+.seg button:active{transform:none;box-shadow:none}
+.seg button+button{border-left:3px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:linear-gradient(135deg,var(--orange-dark),var(--orange));color:#fff}
+.seg button[aria-pressed="true"].veng{background:linear-gradient(135deg,var(--purple-dark),var(--purple))}
+.variant-desc{font-size:12px;font-weight:700;color:var(--muted);margin-top:10px;min-height:32px}
+
+.switch-row{display:flex;align-items:center;gap:12px;background:var(--cream);border:2px solid var(--border);border-radius:12px;padding:12px;margin-top:12px}
+.switch-row .sw-txt{flex:1}
+.switch-row .sw-txt b{display:block;font-size:14px;font-weight:900}
+.switch-row .sw-txt span{font-size:12px;font-weight:700;color:var(--muted)}
+.switch{position:relative;flex:0 0 auto;width:56px;height:32px;border-radius:20px;border:2px solid var(--ink);background:#C0CADC;padding:0;min-height:0;box-shadow:none;transition:background var(--dur-fast) var(--ease-out)}
+.switch:active{transform:none;box-shadow:none}
+.switch::after{content:"";position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;border:2px solid var(--ink);transition:transform var(--dur-normal) var(--ease-out)}
+.switch[aria-checked="true"]{background:var(--red)}
+.switch[aria-checked="true"]::after{transform:translateX(24px)}
+
+.locked-note{display:flex;gap:8px;align-items:flex-start;background:#FFF6E5;border:2px solid var(--yellow);border-radius:12px;padding:10px 12px;margin-top:12px;font-size:12px;font-weight:700;color:#7A5A10}
+
+/* ═══════════════════════════════════════════
+   PLAYERS
+   ═══════════════════════════════════════════ */
+ul{list-style:none;margin:12px 0 0}
+.player-row{display:flex;align-items:center;gap:10px;background:var(--cream);border:2px solid var(--border);border-radius:12px;padding:9px 12px;margin-bottom:8px;animation:slideIn var(--dur-normal) var(--ease-out)}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+.av{width:32px;height:32px;border-radius:9px;border:2px solid var(--ink);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,cursive;font-size:15px}
+.player-row .pname{flex:1;font-weight:800;font-size:15px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.empty-state{text-align:center;padding:20px 12px;color:var(--muted)}
+.empty-state .empty-icon{font-size:28px;margin-bottom:6px}
+.empty-state p{font-size:13px;font-weight:700}
+
+/* ═══════════════════════════════════════════
+   SCOREBOARD
+   ═══════════════════════════════════════════ */
+.score-card{display:flex;align-items:center;gap:12px;background:var(--white);border:2px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden;transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
+.score-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,80,76,.14)}
+.score-card.leader{border:3px solid var(--orange);background:linear-gradient(180deg,#FFF5EE,var(--white))}
+.score-card.winner{border:3px solid var(--green);background:linear-gradient(180deg,var(--green-bg),var(--white))}
+.sc-rank{font-family:'Fredoka One',ui-rounded,cursive;font-size:22px;width:28px;text-align:center;color:var(--muted);flex:0 0 auto}
+.sc-rank.r1{color:var(--orange)}
+.sc-av{width:40px;height:40px;border-radius:12px;border:2px solid var(--ink);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,cursive;font-size:19px}
+.sc-body{flex:1;min-width:0}
+/* Enfant direct uniquement : le <b> du sous-titre doit rester en ligne. */
+.sc-body>b{display:block;font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+.sc-body .sub{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-top:2px;line-height:1.25}
+.progress{height:6px;border-radius:6px;background:#EDF0F4;margin-top:6px;overflow:hidden}
+.progress>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--orange),var(--yellow));transition:width var(--dur-slow) var(--ease-out)}
+.sc-total{font-family:'Fredoka One',ui-rounded,cursive;font-size:36px;min-width:56px;text-align:right;line-height:1;flex:0 0 auto}
+.sc-total.neg{color:var(--red)}
+.sc-crown{position:absolute;top:8px;right:10px;font-size:17px}
+
+/* ═══════════════════════════════════════════
+   ROUND ENTRY
+   ═══════════════════════════════════════════ */
+.round-badge{display:inline-block;background:linear-gradient(135deg,var(--teal-dark),var(--teal-bg));border:2px solid var(--ink);border-radius:10px;padding:1px 12px;font-family:'Fredoka One',ui-rounded,cursive;font-size:22px;color:#fff;box-shadow:2px 2px 0 var(--ink)}
+.round-row{display:flex;align-items:center;gap:6px;background:var(--cream);border:2px solid var(--border);border-radius:12px;padding:8px;margin-bottom:8px;transition:border-color var(--dur-fast) var(--ease-out)}
+.round-row:focus-within{border-color:var(--orange)}
+.round-row .nm{flex:1;font-weight:800;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.round-row input{flex:0 0 68px;text-align:center;font-weight:900;font-size:17px;font-family:'Fredoka One',ui-rounded,cursive;border:2px solid var(--ink);border-radius:10px;padding:7px 2px;background:var(--white)}
+.sign-btn{flex:0 0 auto;width:36px;padding:0;font-size:17px;font-weight:900;min-height:40px;background:var(--white);color:var(--ink);border-color:#C0CADC;box-shadow:2px 2px 0 #C0CADC}
+.sign-btn:active{box-shadow:none}
+.gift-tag{display:block;font-size:11px;font-weight:800;color:var(--purple);margin-top:2px}
+.toolbar{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.toolbar button{flex:1;min-width:120px}
+.footer-row{display:flex;gap:10px;flex-wrap:wrap}
+.footer-row button{flex:1;min-width:130px}
+
+/* ═══════════════════════════════════════════
+   HISTORY
+   ═══════════════════════════════════════════ */
+details{background:var(--cream);border:2px solid var(--border);border-radius:12px;padding:0 14px}
+details summary{cursor:pointer;padding:11px 0;font-weight:800;font-size:14px;list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+details summary::-webkit-details-marker{display:none}
+.summary-arrow{font-size:10px;color:var(--muted);transition:transform var(--dur-fast) var(--ease-out);display:inline-block}
+details[open] .summary-arrow{transform:rotate(90deg)}
+.htable{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px}
+.htable th,.htable td{padding:7px 6px;text-align:center;border-bottom:1px solid #EDE5CC;white-space:nowrap}
+.htable th{color:var(--muted);font-weight:800;font-size:11px;text-transform:uppercase}
+.htable td.pname{text-align:left;font-weight:800;max-width:110px;overflow:hidden;text-overflow:ellipsis}
+.htable .bust{color:var(--red);font-weight:900}
+.htable .neg{color:var(--red)}
+.htable .gift{color:var(--purple);font-weight:900}
+.htable tr:last-child td{border-bottom:none}
+.htable td.edit-cell{cursor:pointer}
+.htable button.edit-round{padding:4px 8px;min-height:0;font-size:11px;box-shadow:1px 1px 0 var(--ink)}
+
+/* ═══════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════ */
+.overlay{
+  position:fixed;inset:0;background:rgba(20,60,56,.68);
+  -webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);
+  display:none;align-items:flex-end;justify-content:center;z-index:var(--z-modal);
+}
+.overlay.open{display:flex;animation:fadeIn var(--dur-fast) var(--ease-out)}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--white);width:100%;max-width:680px;
+  border:3px solid var(--ink);border-bottom:none;border-radius:24px 24px 0 0;
+  padding:18px 16px calc(30px + var(--sab));
+  max-height:92vh;max-height:92dvh;overflow-y:auto;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  box-shadow:0 -8px 40px rgba(0,0,0,.22);
+  animation:slideUp var(--dur-normal) var(--ease-out);
+}
+@keyframes slideUp{from{transform:translateY(20px);opacity:.6}to{transform:none;opacity:1}}
+.modal-handle{width:44px;height:4px;background:#DDD;border-radius:4px;margin:0 auto 16px}
+.modal-title{font-size:20px;font-weight:900;margin-bottom:2px;letter-spacing:-.01em}
+.modal .who{color:var(--orange)}
+.section-label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:16px 0 8px;padding-bottom:4px;border-bottom:2px solid #EDF0F4;display:flex;align-items:center;gap:6px}
+
+.grid-num{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px}
+.grid-mod{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+.grid-special{display:grid;grid-template-columns:1fr;gap:8px}
+
+.chip{
+  position:relative;user-select:none;text-align:center;padding:14px 0;border-radius:12px;
+  border:2px solid #CDD3DC;background:var(--cream);
+  font-family:'Fredoka One',ui-rounded,cursive;font-size:18px;color:var(--ink);
+  cursor:pointer;min-height:48px;touch-action:manipulation;
+  transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out);
+  box-shadow:2px 2px 0 #C0CADC;
+}
+.chip:hover{transform:translateY(-2px);box-shadow:3px 4px 0 #A8B4C8}
+.chip:active{transform:translate(1px,1px);box-shadow:none}
+.chip:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.chip.on{background:linear-gradient(135deg,var(--orange-dark),var(--orange));border-color:var(--ink);box-shadow:2px 2px 0 var(--ink);color:#fff}
+.chip.malus.on{background:linear-gradient(135deg,var(--red-dark),var(--red));border-color:var(--ink);box-shadow:2px 2px 0 var(--ink);color:#fff}
+.chip.div2.on{background:linear-gradient(135deg,var(--purple-dark),var(--purple));border-color:var(--ink);box-shadow:2px 2px 0 var(--ink);color:#fff}
+.chip.mod.on{background:linear-gradient(135deg,var(--teal-dark),var(--teal-light));border-color:var(--ink);box-shadow:2px 2px 0 var(--ink);color:var(--ink)}
+.chip.x2.on{background:linear-gradient(135deg,var(--purple-dark),var(--purple));border-color:var(--ink);box-shadow:2px 2px 0 var(--ink);color:#fff}
+.chip .count{
+  position:absolute;top:-8px;right:-8px;min-width:24px;height:24px;border-radius:12px;
+  background:var(--ink);color:#fff;border:2px solid #fff;
+  font-size:12px;font-weight:900;font-family:'Nunito',sans-serif;
+  display:flex;align-items:center;justify-content:center;
+}
+.chip .sub-label{display:block;font-family:'Nunito',sans-serif;font-size:9px;font-weight:800;letter-spacing:.3px;opacity:.75;margin-top:2px;text-transform:uppercase}
+
+/* Cartes spéciales — lignes larges */
+.special-chip{
+  display:flex;align-items:center;gap:10px;text-align:left;padding:12px 14px;
+  border-radius:12px;border:2px solid #CDD3DC;background:var(--cream);cursor:pointer;
+  min-height:52px;touch-action:manipulation;font-family:inherit;width:100%;
+  box-shadow:2px 2px 0 #C0CADC;
+  transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);
+}
+.special-chip:active{transform:translate(1px,1px);box-shadow:none}
+.special-chip .ic{font-size:20px;flex:0 0 auto}
+.special-chip .tx{flex:1;min-width:0}
+.special-chip .tx b{display:block;font-size:14px;font-weight:900}
+.special-chip .tx span{font-size:11px;font-weight:700;color:var(--muted)}
+.special-chip.on{background:linear-gradient(135deg,var(--yellow-dark),var(--yellow));border-color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.special-chip.on .tx span{color:rgba(19,29,53,.7)}
+
+#bustBtn{width:100%;font-size:14px;font-weight:800;background:var(--white);color:var(--ink);border-color:#C0CADC}
+#bustBtn.on{background:linear-gradient(135deg,var(--red-dark),var(--red));color:#fff;border-color:var(--ink)}
+
+/* Avertissement de validation douce */
+.warn-box{
+  display:none;gap:8px;align-items:flex-start;
+  background:#FFF6E5;border:2px solid var(--yellow);border-radius:12px;
+  padding:10px 12px;margin-top:12px;font-size:12px;font-weight:700;color:#7A5A10;
+}
+.warn-box.show{display:flex}
+.warn-box ul{margin:0;padding-left:0;list-style:none}
+.warn-box li+li{margin-top:3px}
+
+/* ═══════════════════════════════════════════
+   RÉCAPITULATIF DE CALCUL
+   ═══════════════════════════════════════════ */
+.calc-summary{background:linear-gradient(160deg,var(--ink),#2A3850);border:3px solid var(--ink);border-radius:18px;padding:14px;margin:14px 0;box-shadow:4px 4px 0 var(--ink)}
+.calc-lines{margin-bottom:10px}
+.calc-line{display:flex;align-items:baseline;gap:8px;font-size:13px;font-weight:700;color:#B8CCDB;padding:3px 0}
+.calc-line .lbl{flex:0 0 auto}
+.calc-line .dots{flex:1;border-bottom:1px dotted rgba(255,255,255,.2);transform:translateY(-3px)}
+.calc-line .val{flex:0 0 auto;font-weight:900;color:#E4EEF5;font-variant-numeric:tabular-nums}
+.calc-line.flip7 .lbl,.calc-line.flip7 .val{color:var(--yellow)}
+.calc-line.malus .lbl,.calc-line.malus .val{color:#FF9A88}
+.calc-line.gift .lbl,.calc-line.gift .val{color:#C9AEFF}
+.calc-line .detail{display:block;font-size:11px;font-weight:600;opacity:.6;margin-top:1px}
+.calc-sep{height:2px;background:rgba(255,255,255,.18);margin:8px 0}
+.calc-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.calc-foot .ft-lbl{font-size:12px;font-weight:800;color:#8FB0C4;text-transform:uppercase;letter-spacing:.6px}
+.calc-total{font-family:'Fredoka One',ui-rounded,cursive;font-size:48px;color:var(--yellow);line-height:1;text-shadow:0 3px 14px rgba(0,0,0,.45)}
+.calc-total.neg{color:#FF8A7A}
+
+.flip7-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--red-dark),var(--orange));border:2px solid var(--ink);border-radius:20px;color:#fff;font-weight:900;font-size:13px;padding:5px 14px;margin-top:10px;box-shadow:2px 2px 0 var(--ink);animation:popIn var(--dur-normal) var(--ease-out)}
+@keyframes popIn{from{transform:scale(.9) translateY(8px);opacity:0}to{transform:none;opacity:1}}
+
+/* Don du Flip 7 */
+.gift-box{background:#F4EEFF;border:2px solid var(--purple);border-radius:14px;padding:12px;margin-top:12px}
+.gift-box .gb-title{font-size:13px;font-weight:900;color:var(--purple-dark);margin-bottom:8px}
+.gift-opts{display:flex;flex-wrap:wrap;gap:8px}
+.gift-opts button{flex:1 1 auto;min-width:96px;font-size:13px;padding:10px 12px;min-height:42px;background:var(--white);color:var(--ink);border-color:var(--purple);box-shadow:2px 2px 0 var(--purple)}
+.gift-opts button[aria-pressed="true"]{background:linear-gradient(135deg,var(--purple-dark),var(--purple));color:#fff;border-color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+
+.modal-actions{display:flex;gap:10px;margin-top:14px}
+.modal-actions button{flex:1}
+
+/* ═══════════════════════════════════════════
+   VICTOIRE
+   ═══════════════════════════════════════════ */
+.victory-overlay{
+  position:fixed;inset:0;z-index:var(--z-victory);display:none;align-items:center;justify-content:center;
+  padding:calc(16px + var(--sat)) calc(16px + var(--sar)) calc(16px + var(--sab)) calc(16px + var(--sal));
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  background:radial-gradient(ellipse 120% 60% at 50% 0%,#6addd8 0%,transparent 55%),var(--teal-bg);
+}
+.victory-overlay::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:
+    repeating-linear-gradient(0deg,rgba(255,255,255,.1) 0,rgba(255,255,255,.1) 1px,transparent 1px,transparent 44px),
+    repeating-linear-gradient(90deg,rgba(255,255,255,.1) 0,rgba(255,255,255,.1) 1px,transparent 1px,transparent 44px);
+}
+.victory-overlay.open{display:flex;animation:fadeIn var(--dur-normal) var(--ease-out)}
+.victory-card{background:var(--white);border:4px solid var(--ink);border-radius:24px;box-shadow:8px 8px 0 var(--ink);padding:26px 20px 22px;width:100%;max-width:440px;text-align:center;position:relative;z-index:1;margin:auto;animation:victoryPop var(--dur-slow) var(--ease-out)}
+@keyframes victoryPop{from{transform:scale(.88) translateY(20px);opacity:0}to{transform:none;opacity:1}}
+.victory-crown{font-size:60px;line-height:1;margin-bottom:6px;animation:crownDrop .5s var(--ease-out) .12s both}
+@keyframes crownDrop{from{transform:translateY(-16px) scale(.75);opacity:0}to{transform:none;opacity:1}}
+.victory-winner{font-family:'Fredoka One',ui-rounded,cursive;font-size:36px;line-height:1.1;letter-spacing:-.01em;margin-bottom:4px}
+.victory-sub{font-size:15px;font-weight:800;color:var(--muted);margin-bottom:14px}
+.victory-meta{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:14px;text-transform:uppercase;letter-spacing:.8px}
+.victory-scores{background:var(--cream);border:2px solid var(--border);border-radius:14px;padding:8px 12px;margin-bottom:16px;text-align:left}
+.victory-score-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.victory-score-row:last-child{border-bottom:none}
+.vsr-rank{font-family:'Fredoka One',ui-rounded,cursive;font-size:18px;width:24px;color:var(--muted)}
+.vsr-rank.r1{color:var(--orange)}
+.vsr-av{width:28px;height:28px;border-radius:8px;border:2px solid var(--ink);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,cursive;font-size:13px}
+.vsr-name{flex:1;font-weight:800;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vsr-pts{font-family:'Fredoka One',ui-rounded,cursive;font-size:22px}
+.vsr-pts.neg{color:var(--red)}
+.victory-actions{display:flex;flex-direction:column;gap:9px}
+
+/* Bandeaux */
+.winbanner{background:linear-gradient(135deg,var(--green-dark),var(--green));border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--ink);padding:14px 16px;margin-bottom:18px;font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.winbanner .wb-text{flex:1;min-width:140px}
+.winbanner button{flex:0 0 auto;font-size:13px;padding:8px 14px;min-height:38px;border-color:rgba(0,0,0,.25);box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+.tiebanner{background:linear-gradient(135deg,var(--yellow-dark),var(--yellow));color:var(--ink)}
+
+/* Feuille de confirmation maison (remplace confirm()) */
+.confirm-card{background:var(--white);border:4px solid var(--ink);border-radius:22px;box-shadow:8px 8px 0 var(--ink);padding:22px 18px;width:100%;max-width:400px;text-align:center;margin:auto;animation:victoryPop var(--dur-normal) var(--ease-out)}
+.confirm-card .cf-ic{font-size:38px;margin-bottom:6px}
+.confirm-card .cf-title{font-size:19px;font-weight:900;margin-bottom:6px}
+.confirm-card .cf-msg{font-size:14px;font-weight:700;color:var(--muted);margin-bottom:18px}
+.confirm-actions{display:flex;gap:10px}
+.confirm-actions button{flex:1}
+#confirmOverlay{align-items:center;padding:20px}
+
+/* Toast */
+.toast{
+  position:fixed;left:50%;bottom:calc(24px + var(--sab));transform:translateX(-50%) translateY(20px);
+  background:var(--ink);color:#fff;border:2px solid #fff;border-radius:14px;
+  padding:12px 18px;font-size:14px;font-weight:800;z-index:70;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;pointer-events:none;
+  transition:opacity var(--dur-normal) var(--ease-out),transform var(--dur-normal) var(--ease-out);
+  max-width:min(90vw,420px);text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ═══════════════════════════════════════════
+   AVATARS
+   ═══════════════════════════════════════════ */
+.av0{background:linear-gradient(135deg,#D4A820,var(--yellow));color:var(--ink)!important}
+.av1{background:linear-gradient(135deg,var(--teal-dark),var(--teal-light));color:var(--ink)!important}
+.av2{background:linear-gradient(135deg,var(--purple-dark),#A880FF);color:#fff!important}
+.av3{background:linear-gradient(135deg,var(--red-dark),var(--red));color:#fff!important}
+.av4{background:linear-gradient(135deg,var(--green-dark),var(--green));color:#fff!important}
+.av5{background:linear-gradient(135deg,#B05010,var(--orange));color:#fff!important}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════ */
+@media (min-width:560px){
+  body{padding:calc(24px + var(--sat)) calc(20px + var(--sar)) calc(56px + var(--sab)) calc(20px + var(--sal))}
+  .panel{padding:22px 20px}
+  .modal{padding:22px 22px calc(36px + var(--sab))}
+  .sc-total{font-size:42px}
+  .grid-num{grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
+  .grid-special{grid-template-columns:1fr 1fr}
+  .round-row input{flex:0 0 84px}
+  .calc-total{font-size:56px}
+}
+@media (min-width:700px){
+  .logo-flip{font-size:40px}.logo-7{font-size:68px}
+  .logo-box{padding:14px 42px 12px}
+  header{margin:12px 0 30px}
+  .panel{border-radius:22px}
+  .victory-winner{font-size:44px}
+}
+@media (max-width:360px){
+  .logo-flip{font-size:28px}.logo-7{font-size:50px}
+  .calc-total{font-size:40px}
+  .sc-total{font-size:29px;min-width:46px}
+  .victory-winner{font-size:29px}.victory-crown{font-size:50px}
+  .round-row{gap:5px;padding:7px 6px}
+  .round-row input{flex:0 0 58px;font-size:16px}
+  .sign-btn{width:32px}
+  .grid-num{grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+}
+
+.hidden{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ══ HEADER ══ -->
+  <header>
+    <div class="logo-box">
+      <div class="logo-text"><span class="logo-flip">FLIP</span><span class="logo-7">7</span></div>
+    </div>
+    <div class="header-sub">Compteur de points</div>
+    <div id="headerVariant" class="header-variant hidden"></div>
+  </header>
+
+  <!-- ══════════════ SETUP ══════════════ -->
+  <section id="setup">
+    <div class="panel">
+      <div class="panel-title"><span class="panel-icon">👥</span>Joueurs</div>
+      <div class="row">
+        <input type="text" id="playerName" placeholder="Prénom du joueur" autocomplete="off" enterkeyhint="done">
+        <button class="btn-primary btn-icon" id="addPlayerBtn" aria-label="Ajouter le joueur">＋</button>
+      </div>
+      <ul id="playerList" role="list"></ul>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title"><span class="panel-icon">🎲</span>Variante</div>
+      <div class="seg" role="group" aria-label="Choix de la variante">
+        <button type="button" id="segStandard" aria-pressed="true">Standard</button>
+        <button type="button" id="segVengeance" class="veng" aria-pressed="false">Vengeance</button>
+      </div>
+      <p class="variant-desc" id="variantDesc"></p>
+      <div id="mercilessRow" class="switch-row hidden">
+        <div class="sw-txt">
+          <b>Mode Sans Pitié</b>
+          <span>Les scores peuvent descendre sous zéro</span>
+        </div>
+        <button type="button" class="switch" id="mercilessSwitch" role="switch" aria-checked="false" aria-label="Activer le mode Sans Pitié"></button>
+      </div>
+      <div id="variantLocked" class="locked-note hidden">
+        <span>🔒</span>
+        <span>La variante est verrouillée pendant la partie — elle change le calcul des manches déjà notées. Lance une nouvelle partie pour en changer.</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title"><span class="panel-icon">🎯</span>Objectif</div>
+      <label for="targetScore">Points pour gagner la partie</label>
+      <input type="number" id="targetScore" value="200" min="1" inputmode="numeric">
+      <p class="hint">Règle officielle : premier à <b>200 points</b>.</p>
+    </div>
+
+    <button class="btn-primary btn-full" id="startBtn">▶ Commencer la partie !</button>
+  </section>
+
+  <!-- ══════════════ GAME ══════════════ -->
+  <section id="game" class="hidden">
+    <div id="winBanner" class="winbanner hidden" role="status" aria-live="polite"></div>
+
+    <div class="panel">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <div class="panel-title" style="margin:0;flex:1"><span class="panel-icon">🏆</span>Classement</div>
+        <span class="pill" id="roundInfo" aria-live="polite"></span>
+      </div>
+      <div id="scoreboard" role="list"></div>
+    </div>
+
+    <div class="panel" id="entryPanel">
+      <div class="panel-title">
+        <span class="panel-icon">➕</span>Manche&nbsp;<span class="round-badge" id="curRound" aria-live="polite"></span>
+      </div>
+      <p class="hint" id="entryHint" style="margin-bottom:12px"></p>
+      <div id="roundEntry"></div>
+      <div class="toolbar">
+        <button class="btn-green" id="validateBtn">✅ Valider la manche</button>
+        <button class="btn-ghost" id="clearBtn">🧹 Effacer</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title" style="margin-bottom:10px"><span class="panel-icon">📋</span>Historique</div>
+      <div style="margin-bottom:12px">
+        <button class="btn-yellow btn-sm" id="undoBtn">↩ Annuler la dernière manche</button>
+      </div>
+      <div id="history"></div>
+    </div>
+
+    <div class="footer-row">
+      <button class="btn-ghost btn-sm" id="editPlayersBtn">⚙ Modifier joueurs</button>
+      <button class="btn-danger btn-sm" id="resetBtn">🗑 Nouvelle partie</button>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════ VICTOIRE ══════════════ -->
+<div class="victory-overlay" id="victoryOverlay" role="dialog" aria-modal="true" aria-labelledby="victoryTitle">
+  <div class="victory-card">
+    <div class="victory-crown" aria-hidden="true">👑</div>
+    <div class="victory-winner" id="victoryTitle"></div>
+    <div class="victory-sub" id="victorySub">remporte la partie !</div>
+    <div class="victory-meta" id="victoryMeta"></div>
+    <div class="victory-scores" id="victoryScores"></div>
+    <div class="victory-actions">
+      <button class="btn-yellow btn-full" id="shareBtn" style="font-size:15px;padding:14px">📤 Partager les scores</button>
+      <button class="btn-green btn-full" id="replayBtn" style="font-size:15px;padding:14px">🔄 Rejouer avec les mêmes joueurs</button>
+      <button class="btn-primary btn-full" id="newGameBtn" style="font-size:15px;padding:14px">🗑 Nouvelle partie (autres joueurs)</button>
+      <button class="btn-ghost btn-sm" id="closeVictoryBtn" style="width:100%">↩ Retour aux scores</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CALCULATEUR ══════════════ -->
+<div class="overlay" id="calcOverlay" role="dialog" aria-modal="true" aria-labelledby="calcModalTitle">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="calcModalTitle">🃏 Manche de <span class="who" id="calcWho"></span></div>
+    <p class="hint" style="margin-bottom:10px">Sélectionne les cartes retournées.</p>
+
+    <button id="bustBtn">💥 A sauté — 0 point</button>
+
+    <div id="cardArea">
+      <div class="section-label" id="numLabel">📟 Cartes chiffres</div>
+      <div class="grid-num" id="numGrid" role="group" aria-label="Cartes chiffres"></div>
+
+      <div id="stdSection">
+        <div class="section-label">⚡ Modificateurs bonus</div>
+        <div class="grid-mod" id="modGrid" role="group" aria-label="Modificateurs bonus"></div>
+        <div class="section-label">✦ Multiplicateur</div>
+        <div class="grid-mod" id="x2Grid" role="group" aria-label="Multiplicateur"></div>
+      </div>
+
+      <div id="vengSection" class="hidden">
+        <div class="section-label">💀 Malus</div>
+        <div class="grid-mod" id="malusGrid" role="group" aria-label="Cartes Malus"></div>
+        <div class="section-label">🎭 Cartes spéciales</div>
+        <div class="grid-special" id="specialGrid" role="group" aria-label="Cartes spéciales"></div>
+      </div>
+    </div>
+
+    <div class="warn-box" id="warnBox" role="status" aria-live="polite">
+      <span>⚠️</span><ul id="warnList"></ul>
+    </div>
+
+    <div class="gift-box hidden" id="giftBox">
+      <div class="gb-title">🎁 Flip 7 en Sans Pitié — tu peux infliger les 15 points</div>
+      <div class="gift-opts" id="giftOpts"></div>
+    </div>
+
+    <div class="calc-summary">
+      <div class="calc-lines" id="calcLines"></div>
+      <div class="calc-sep"></div>
+      <div class="calc-foot">
+        <span class="ft-lbl">Total manche</span>
+        <span class="calc-total" id="calcTotal" aria-live="polite">0</span>
+      </div>
+      <div style="text-align:center">
+        <div id="flip7Badge" class="flip7-badge hidden">🎉 FLIP 7 ! +15 points bonus</div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancelCalcBtn">Annuler</button>
+      <button class="btn-green" style="flex:1.4" id="applyCalcBtn">Appliquer ce score →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CONFIRMATION ══════════════ -->
+<div class="overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+  <div class="confirm-card">
+    <div class="cf-ic" id="confirmIcon" aria-hidden="true">❓</div>
+    <div class="cf-title" id="confirmTitle"></div>
+    <div class="cf-msg" id="confirmMsg"></div>
+    <div class="confirm-actions">
+      <button class="btn-ghost" id="confirmNo">Annuler</button>
+      <button class="btn-danger" id="confirmYes">Confirmer</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+
+/* ═══════════════════════════════════════════
+   PERSISTANCE — state v2 + migration depuis v1
+   ═══════════════════════════════════════════ */
+const KEY_V2 = "flip7_state_v2";
+const KEY_V1 = "flip7_state_v1";
+
+const DEFAULT_STATE = () => ({
+  version: 2,
+  variant: "standard",
+  merciless: false,
+  target: 200,
+  started: false,
+  players: [],
+  rounds: []
+});
+
+let state = DEFAULT_STATE();
+
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+
+function save() {
+  try { localStorage.setItem(KEY_V2, JSON.stringify(state)); } catch (e) {}
+}
+
+/* Migration v1 → v2. La v1 stockait rounds comme [{playerId: score}].
+   On conserve la v1 en place : si l'utilisateur revient à une ancienne
+   version de l'app, sa partie est toujours là. */
+function migrateV1(raw) {
+  const s = DEFAULT_STATE();
+  s.target   = Number.isFinite(raw.target) && raw.target > 0 ? raw.target : 200;
+  s.started  = !!raw.started;
+  s.players  = Array.isArray(raw.players)
+    ? raw.players.filter(p => p && p.id && typeof p.name === "string")
+    : [];
+  const known = new Set(s.players.map(p => p.id));
+  s.rounds = (Array.isArray(raw.rounds) ? raw.rounds : []).map(r => {
+    const entries = {};
+    if (r && typeof r === "object") {
+      for (const [pid, score] of Object.entries(r)) {
+        // On ignore les scores orphelins : un joueur supprimé n'a plus de ligne.
+        if (!known.has(pid)) continue;
+        entries[pid] = { cards: null, score: Number.isFinite(score) ? score : 0, manual: true };
+      }
+    }
+    return { id: uid(), entries };
+  });
+  return s;
+}
+
+function normalize(raw) {
+  const s = DEFAULT_STATE();
+  if (!raw || typeof raw !== "object") return s;
+  s.variant   = raw.variant === "vengeance" ? "vengeance" : "standard";
+  s.merciless = s.variant === "vengeance" && !!raw.merciless;
+  s.target    = Number.isFinite(raw.target) && raw.target > 0 ? raw.target : 200;
+  s.started   = !!raw.started;
+  s.players   = Array.isArray(raw.players)
+    ? raw.players.filter(p => p && p.id && typeof p.name === "string").map(p => ({ id: p.id, name: p.name }))
+    : [];
+  const known = new Set(s.players.map(p => p.id));
+  s.rounds = (Array.isArray(raw.rounds) ? raw.rounds : []).map(r => {
+    const entries = {};
+    const src = (r && r.entries && typeof r.entries === "object") ? r.entries : {};
+    for (const [pid, e] of Object.entries(src)) {
+      if (!known.has(pid) || !e) continue;
+      entries[pid] = {
+        cards: e.cards ? normalizeSelection(e.cards) : null,
+        score: Number.isFinite(e.score) ? e.score : 0,
+        manual: !!e.manual
+      };
+    }
+    return { id: (r && r.id) || uid(), entries };
+  });
+  return s;
+}
+
+function load() {
+  let raw = null;
+  try { raw = JSON.parse(localStorage.getItem(KEY_V2) || "null"); } catch (e) { raw = null; }
+  if (raw) { state = normalize(raw); return; }
+  let old = null;
+  try { old = JSON.parse(localStorage.getItem(KEY_V1) || "null"); } catch (e) { old = null; }
+  if (old) { state = migrateV1(old); save(); return; }
+  state = DEFAULT_STATE();
+}
+
+/* ═══════════════════════════════════════════
+   SÉLECTION DE CARTES
+   ═══════════════════════════════════════════ */
+const MODS      = [2, 4, 6, 8, 10];      // standard, bonus additifs
+const MALUS     = [-2, -4, -6, -8, -10]; // vengeance
+const DIV2      = "div2";
+
+const newSelection = () => ({
+  numbers: [], mods: [], malus: [],
+  x2: false, bust: false,
+  luckyThirteen: false,
+  discardedByUnlucky7: false,
+  flip7Gift: null
+});
+
+function normalizeSelection(c) {
+  const s = newSelection();
+  if (!c || typeof c !== "object") return s;
+  s.numbers = Array.isArray(c.numbers) ? c.numbers.filter(n => Number.isInteger(n) && n >= 0 && n <= 13) : [];
+  s.mods    = Array.isArray(c.mods)    ? c.mods.filter(m => MODS.includes(m)) : [];
+  s.malus   = Array.isArray(c.malus)   ? c.malus.filter(m => m === DIV2 || MALUS.includes(m)) : [];
+  s.x2 = !!c.x2; s.bust = !!c.bust;
+  s.luckyThirteen = !!c.luckyThirteen;
+  s.discardedByUnlucky7 = !!c.discardedByUnlucky7;
+  s.flip7Gift = typeof c.flip7Gift === "string" ? c.flip7Gift : null;
+  return s;
+}
+
+/* ═══════════════════════════════════════════
+   MOTEUR DE SCORE
+   ═══════════════════════════════════════════ */
+
+/* Flip 7 = exactement 7 cartes Numéro toutes distinctes.
+   Seule exception : une paire de 13 légitimée par le 13 Porte-bonheur.
+   Le Zéro est la carte 0 : il compte comme une carte Numéro. */
+function isFlip7(sel) {
+  if (sel.bust) return false;
+  if (sel.numbers.length !== 7) return false;
+  const counts = new Map();
+  for (const n of sel.numbers) counts.set(n, (counts.get(n) || 0) + 1);
+  for (const [value, n] of counts) {
+    if (n === 1) continue;
+    if (n === 2 && value === 13 && sel.luckyThirteen) continue;
+    return false;
+  }
+  return true;
+}
+
+/* Validation douce : on n'empêche jamais la saisie, on signale. */
+function validateSelection(sel) {
+  const warns = [];
+  const counts = new Map();
+  for (const n of sel.numbers) counts.set(n, (counts.get(n) || 0) + 1);
+  for (const [value, n] of counts) {
+    if (n < 2) continue;
+    if (value === 13) {
+      if (n > 2) warns.push(`Trois cartes 13 : impossible, il n'en existe que deux.`);
+      else if (!sel.luckyThirteen) warns.push(`Deux 13 sans le 13 Porte-bonheur : normalement c'est un bust.`);
+    } else {
+      warns.push(`Deux cartes ${value} : normalement le joueur saute.`);
+    }
+  }
+  if (sel.numbers.length > 7) warns.push(`${sel.numbers.length} cartes Numéro : le maximum est 7.`);
+  return warns;
+}
+
+/* Renvoie { total, lines, flip7 }.
+   `lines` est une liste prête à afficher — une ligne par opération. */
+function computeScore(sel, variant, merciless) {
+  const lines = [];
+  const flip7 = isFlip7(sel);
+  const numSum = sel.numbers.reduce((a, b) => a + b, 0);
+
+  let base;
+  if (sel.bust) {
+    base = 0;
+    lines.push({ label: "A sauté", value: 0, kind: "malus" });
+  } else {
+    base = numSum;
+    lines.push({
+      label: `Cartes chiffres (${sel.numbers.length})`,
+      value: numSum,
+      detail: sel.numbers.length ? sel.numbers.join(" + ") : "aucune"
+    });
+  }
+
+  if (variant === "standard") {
+    if (sel.x2 && !sel.bust) { base = base * 2; lines.push({ label: "×2", value: base }); }
+    const modSum = sel.mods.reduce((a, b) => a + b, 0);
+    if (modSum) { base += modSum; lines.push({ label: `Bonus +${modSum}`, value: base }); }
+    if (flip7) { base += 15; lines.push({ label: "Flip 7 +15", value: base, kind: "flip7" }); }
+    return { total: base, lines, flip7 };
+  }
+
+  /* ── Vengeance ── */
+  // Le Zéro annule la manche, sauf si le joueur réussit un Flip 7.
+  if (!sel.bust && sel.numbers.includes(0) && !flip7 && base !== 0) {
+    base = 0;
+    lines.push({ label: "Le Zéro — manche annulée", value: 0, kind: "malus" });
+  }
+  // ÷2 avant les Malus : le livret précise que la division ne les touche pas.
+  const divs = sel.malus.filter(m => m === DIV2).length;
+  for (let i = 0; i < divs; i++) base = Math.floor(base / 2);
+  if (divs) lines.push({ label: divs > 1 ? `÷2 (×${divs})` : "÷2", value: base });
+
+  const malusSum = sel.malus.filter(m => typeof m === "number").reduce((a, b) => a + b, 0);
+  if (malusSum) { base += malusSum; lines.push({ label: `Malus ${malusSum}`, value: base, kind: "malus" }); }
+
+  // Le plancher tombe AVANT le bonus, pour que le Flip 7 soit toujours crédité en entier.
+  if (!merciless && base < 0) { base = 0; lines.push({ label: "Plancher à 0", value: 0 }); }
+
+  if (flip7) {
+    if (sel.flip7Gift) {
+      lines.push({ label: "Flip 7 offert en malus", value: base, kind: "gift" });
+    } else {
+      base += 15;
+      lines.push({ label: "Flip 7 +15", value: base, kind: "flip7" });
+    }
+  }
+  return { total: base, lines, flip7 };
+}
+
+/* ═══════════════════════════════════════════
+   TOTAUX
+   ═══════════════════════════════════════════ */
+
+/* Le don du Flip 7 est un effet inter-joueurs : on l'applique au niveau
+   de la manche, pas dans le score du joueur ciblé. Il reste ainsi
+   traçable, réversible, et deux donneurs sur la même cible cumulent. */
+function giftsAgainst(round, pid) {
+  let n = 0;
+  for (const [otherId, e] of Object.entries(round.entries)) {
+    if (otherId !== pid && e.cards && e.cards.flip7Gift === pid) n++;
+  }
+  return n;
+}
+function roundScoreFor(round, pid) {
+  const e = round.entries[pid];
+  const own = e ? e.score : 0;
+  return own - 15 * giftsAgainst(round, pid);
+}
+function totals() {
+  const t = {};
+  state.players.forEach(p => t[p.id] = 0);
+  state.rounds.forEach(r => state.players.forEach(p => { t[p.id] += roundScoreFor(r, p.id); }));
+  return t;
+}
+
+/* Renvoie { winners:[], tie:bool } — l'égalité au sommet déclenche
+   une manche de mort subite plutôt qu'un vainqueur arbitraire. */
+function winners(t) {
+  const reached = state.players.filter(p => t[p.id] >= state.target);
+  if (!reached.length) return null;
+  const max = Math.max(...reached.map(p => t[p.id]));
+  const top = reached.filter(p => t[p.id] === max);
+  return { winners: top, tie: top.length > 1, score: max };
+}
+
+/* ═══════════════════════════════════════════
+   HELPERS UI
+   ═══════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const AVC = ["av0","av1","av2","av3","av4","av5"];
+const avc = i => AVC[i % AVC.length];
+const ini = n => (n.trim()[0] || "?").toUpperCase();
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const plural = (n, s, p) => n > 1 ? p : s;
+
+let toastTimer = null;
+function toast(msg) {
+  const el = $("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+/* Verrou de défilement : on mémorise la position pour la restaurer,
+   sinon iOS ramène brutalement l'utilisateur en haut de page. */
+let lockedScrollY = 0;
+function lockScroll() {
+  lockedScrollY = window.scrollY;
+  document.body.style.top = `-${lockedScrollY}px`;
+  document.body.classList.add("locked");
+}
+function unlockScroll() {
+  document.body.classList.remove("locked");
+  document.body.style.top = "";
+  window.scrollTo(0, lockedScrollY);
+}
+
+/* Confirmation maison — confirm() natif affiche le nom de domaine,
+   ce qui casse l'illusion d'application. */
+let confirmResolve = null;
+function askConfirm({ icon = "❓", title, message, yes = "Confirmer", danger = true }) {
+  return new Promise(resolve => {
+    confirmResolve = resolve;
+    $("confirmIcon").textContent = icon;
+    $("confirmTitle").textContent = title;
+    $("confirmMsg").textContent = message;
+    const y = $("confirmYes");
+    y.textContent = yes;
+    y.className = danger ? "btn-danger" : "btn-green";
+    openSheet("confirmOverlay");
+  });
+}
+function closeConfirm(result) {
+  closeSheet("confirmOverlay");
+  if (confirmResolve) { confirmResolve(result); confirmResolve = null; }
+}
+
+/* Gestion des feuilles : verrou de défilement + bouton retour Android.
+   Sans pushState, le retour système quitte l'app au lieu de fermer la feuille. */
+const sheetStack = [];
+function openSheet(id) {
+  $(id).classList.add("open");
+  if (!sheetStack.length) lockScroll();
+  sheetStack.push(id);
+  history.pushState({ sheet: id }, "");
+}
+function closeSheet(id, fromPop) {
+  const el = $(id);
+  if (!el.classList.contains("open")) return;
+  el.classList.remove("open");
+  const i = sheetStack.lastIndexOf(id);
+  if (i >= 0) sheetStack.splice(i, 1);
+  if (!sheetStack.length) unlockScroll();
+  if (!fromPop && history.state && history.state.sheet === id) history.back();
+}
+window.addEventListener("popstate", () => {
+  const top = sheetStack[sheetStack.length - 1];
+  if (!top) return;
+  if (top === "calcOverlay") closeCalc(true);
+  else if (top === "confirmOverlay") closeConfirm(false);
+  else if (top === "victoryOverlay") closeVictory(true);
+});
+
+/* ═══════════════════════════════════════════
+   SETUP
+   ═══════════════════════════════════════════ */
+const VARIANT_DESC = {
+  standard: "Le jeu de base : cartes 0 à 12, bonus +2 à +10 et ×2. Premier à l'objectif.",
+  vengeance: "Cartes 0 à 13, cartes Malus et ÷2, Le Zéro, 7 Porte-malheur et 13 Porte-bonheur."
+};
+
+function renderVariant() {
+  const veng = state.variant === "vengeance";
+  $("segStandard").setAttribute("aria-pressed", String(!veng));
+  $("segVengeance").setAttribute("aria-pressed", String(veng));
+  $("variantDesc").textContent = VARIANT_DESC[state.variant];
+  $("mercilessRow").classList.toggle("hidden", !veng);
+  $("mercilessSwitch").setAttribute("aria-checked", String(!!state.merciless));
+
+  // Verrouillage : des manches sont déjà notées avec la sémantique actuelle.
+  const locked = state.rounds.length > 0;
+  $("variantLocked").classList.toggle("hidden", !locked);
+  $("segStandard").disabled = locked;
+  $("segVengeance").disabled = locked;
+  $("mercilessSwitch").disabled = locked;
+
+  const hv = $("headerVariant");
+  if (veng) {
+    hv.classList.remove("hidden");
+    hv.textContent = state.merciless ? "Vengeance · Sans Pitié" : "Vengeance";
+  } else hv.classList.add("hidden");
+}
+
+function setVariant(v) {
+  if (state.rounds.length) { toast("Variante verrouillée — la partie est commencée."); return; }
+  state.variant = v;
+  if (v !== "vengeance") state.merciless = false;
+  save(); renderVariant();
+}
+
+function renderPlayerList() {
+  const ul = $("playerList");
+  ul.innerHTML = "";
+  if (!state.players.length) {
+    ul.innerHTML = `<li class="empty-state"><div class="empty-icon">👤</div><p>Aucun joueur — saisis un prénom ci-dessus et appuie sur ＋</p></li>`;
+    return;
+  }
+  state.players.forEach((p, i) => {
+    const li = document.createElement("li");
+    li.className = "player-row";
+    li.innerHTML = `<span class="av ${avc(i)}"></span><span class="pname"></span>
+      <button class="btn-ghost btn-mini" style="color:var(--red);min-width:40px">✕</button>`;
+    li.querySelector(".av").textContent = ini(p.name);
+    li.querySelector(".pname").textContent = p.name;
+    const btn = li.querySelector("button");
+    btn.setAttribute("aria-label", `Retirer ${p.name}`);
+    btn.onclick = () => removePlayer(p.id);
+    ul.appendChild(li);
+  });
+}
+
+function addPlayer() {
+  const inp = $("playerName");
+  const name = inp.value.trim().slice(0, 24);
+  if (!name) return;
+  if (state.players.length >= 12) { toast("12 joueurs maximum."); return; }
+  state.players.push({ id: uid(), name });
+  inp.value = ""; inp.focus();
+  save(); renderPlayerList();
+}
+
+async function removePlayer(id) {
+  const p = state.players.find(x => x.id === id);
+  if (!p) return;
+  // Des manches sont déjà notées : on prévient que les points partent avec.
+  const hasScores = state.rounds.some(r => r.entries[id]);
+  if (hasScores) {
+    const ok = await askConfirm({
+      icon: "🗑",
+      title: `Retirer ${p.name} ?`,
+      message: "Ses points dans les manches déjà notées seront supprimés. Les autres joueurs gardent les leurs.",
+      yes: "Retirer"
+    });
+    if (!ok) return;
+  }
+  state.players = state.players.filter(x => x.id !== id);
+  // On purge aussi les entrées et les dons qui le visaient — sinon des
+  // points fantômes resteraient dans les totaux.
+  state.rounds.forEach(r => {
+    delete r.entries[id];
+    Object.values(r.entries).forEach(e => {
+      if (e.cards && e.cards.flip7Gift === id) e.cards.flip7Gift = null;
+    });
+  });
+  save(); renderPlayerList();
+  if (state.started) renderGame();
+}
+
+function startGame() {
+  if (state.players.length < 2) { toast("Ajoute au moins 2 joueurs."); return; }
+  const t = parseInt($("targetScore").value, 10);
+  if (!Number.isFinite(t) || t < 1) { toast("Indique un objectif de points valide."); return; }
+  state.target = t;
+  state.started = true;
+  save(); showGame();
+}
+
+function backToSetup() {
+  state.started = false; save();
+  $("targetScore").value = state.target;
+  renderPlayerList(); renderVariant();
+  $("game").classList.add("hidden");
+  $("setup").classList.remove("hidden");
+  window.scrollTo(0, 0);
+}
+
+async function resetAll() {
+  const ok = await askConfirm({
+    icon: "🗑",
+    title: "Nouvelle partie ?",
+    message: "Les joueurs et tous les scores seront effacés.",
+    yes: "Tout effacer"
+  });
+  if (!ok) return;
+  state = DEFAULT_STATE();
+  try { localStorage.removeItem(KEY_V2); localStorage.removeItem(KEY_V1); } catch (e) {}
+  $("targetScore").value = 200;
+  renderPlayerList(); renderVariant();
+  $("game").classList.add("hidden");
+  $("setup").classList.remove("hidden");
+  closeVictory();
+  window.scrollTo(0, 0);
+}
+
+function replayWithSamePlayers() {
+  // On garde joueurs, objectif ET variante : c'est la même tablée.
+  state.rounds = [];
+  save();
+  closeVictory();
+  renderGame();
+  window.scrollTo(0, 0);
+  toast("Nouvelle manche — les scores repartent de zéro.");
+}
+
+/* ═══════════════════════════════════════════
+   RENDU DU JEU
+   ═══════════════════════════════════════════ */
+function showGame() {
+  $("setup").classList.add("hidden");
+  $("game").classList.remove("hidden");
+  renderGame();
+  window.scrollTo(0, 0);
+}
+
+function renderGame() {
+  renderVariant();
+  const t = totals();
+  const res = winners(t);
+
+  const wb = $("winBanner");
+  if (res && res.tie) {
+    // Règle officielle : égalité au sommet → manche de mort subite.
+    wb.classList.remove("hidden");
+    wb.classList.add("tiebanner");
+    wb.innerHTML = `<span class="wb-text">🤝 Égalité à ${res.score} pts entre ${esc(res.winners.map(p => p.name).join(" & "))} — manche de mort subite !</span>`;
+    $("entryPanel").classList.remove("hidden");
+  } else if (res) {
+    wb.classList.remove("hidden");
+    wb.classList.remove("tiebanner");
+    const n = esc(res.winners[0].name);
+    wb.innerHTML = `<span class="wb-text">🎉 ${n} gagne la partie !</span>
+      <button class="btn-yellow" id="seeResultsBtn">🏆 Voir les résultats</button>`;
+    $("seeResultsBtn").onclick = () => openVictory();
+    $("entryPanel").classList.add("hidden");
+  } else {
+    wb.classList.add("hidden");
+    wb.classList.remove("tiebanner");
+    $("entryPanel").classList.remove("hidden");
+  }
+
+  $("roundInfo").textContent =
+    `${state.rounds.length} ${plural(state.rounds.length, "manche", "manches")} · objectif ${state.target} pts`;
+  $("curRound").textContent = state.rounds.length + 1;
+  $("entryHint").innerHTML = state.variant === "vengeance"
+    ? "Saisis les points ou utilise 🃏 pour compter cartes, Malus et bonus."
+    : "Saisis les points ou utilise 🃏 pour calculer depuis les cartes.";
+
+  const rank = [...state.players].sort((a, b) => t[b.id] - t[a.id]);
+  const sb = $("scoreboard");
+  sb.innerHTML = "";
+  rank.forEach((p, idx) => {
+    const total = t[p.id];
+    const rem = Math.max(0, state.target - total);
+    // Clamp bas indispensable : en Sans Pitié un total peut être négatif.
+    const pct = Math.max(0, Math.min(100, Math.round(total / state.target * 100)));
+    const hasWon = !!res && total >= state.target && res.winners.some(w => w.id === p.id) && !res.tie;
+    const isLeader = idx === 0 && !res && state.rounds.length > 0;
+    const oi = state.players.findIndex(x => x.id === p.id);
+
+    const d = document.createElement("div");
+    d.className = "score-card" + (hasWon ? " winner" : isLeader ? " leader" : "");
+    d.setAttribute("role", "listitem");
+    const sub = total >= state.target
+      ? "🏁 Objectif atteint !"
+      : `Encore <b>${rem}</b> ${plural(rem, "pt", "pts")} pour gagner`;
+    d.innerHTML = `
+      <span class="sc-rank${idx === 0 ? " r1" : ""}">${idx + 1}</span>
+      <div class="sc-av ${avc(oi)}"></div>
+      <div class="sc-body">
+        <b></b><span class="sub">${sub}</span>
+        <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+      </div>
+      <div class="sc-total${total < 0 ? " neg" : ""}">${total}</div>
+      ${hasWon ? '<span class="sc-crown">👑</span>' : ""}`;
+    d.querySelector(".sc-av").textContent = ini(p.name);
+    d.querySelector("b").textContent = p.name;
+    sb.appendChild(d);
+  });
+
+  renderRoundEntry();
+  renderHistory(t);
+}
+
+/* Saisie d'une manche. `draft` conserve les sélections de cartes
+   en cours avant validation. */
+let draft = {};
+
+function renderRoundEntry() {
+  const box = $("roundEntry");
+  box.innerHTML = "";
+  state.players.forEach((p, i) => {
+    const row = document.createElement("div");
+    row.className = "round-row";
+    const gift = draft[p.id] && draft[p.id].flip7Gift;
+    const giftName = gift ? (state.players.find(x => x.id === gift) || {}).name : null;
+    row.innerHTML = `
+      <div class="av ${avc(i)}" style="width:28px;height:28px;border-radius:8px;font-size:13px;flex:0 0 auto"></div>
+      <div class="nm"><span class="nm-txt"></span>${giftName ? `<span class="gift-tag">🎁 −15 à ${esc(giftName)}</span>` : ""}</div>
+      ${state.merciless ? `<button class="sign-btn" data-sign="${p.id}" aria-label="Inverser le signe du score de ${esc(p.name)}">±</button>` : ""}
+      <button class="btn-yellow btn-mini" data-calc="${p.id}" aria-label="Compter les cartes de ${esc(p.name)}" style="font-size:16px;padding:7px 10px">🃏</button>
+      <input type="text" inputmode="numeric" pattern="-?[0-9]*" autocomplete="off" enterkeyhint="done"
+             placeholder="0" id="in_${p.id}" aria-label="Points de ${esc(p.name)}">`;
+    row.querySelector(".av").textContent = ini(p.name);
+    row.querySelector(".nm-txt").textContent = p.name;
+    box.appendChild(row);
+  });
+  box.querySelectorAll("[data-calc]").forEach(b => b.onclick = () => openCalc(b.dataset.calc));
+  box.querySelectorAll("[data-sign]").forEach(b => b.onclick = () => {
+    const el = $("in_" + b.dataset.sign);
+    const raw = el.value.trim();
+    // Champ vide : on amorce le signe pour que l'utilisateur tape ses chiffres.
+    if (raw === "") el.value = "-";
+    else if (raw === "-") el.value = "";
+    else if (/^-?\d+$/.test(raw)) el.value = String(-parseInt(raw, 10));
+    el.focus();
+  });
+}
+
+function clearRoundInputs() {
+  draft = {};
+  state.players.forEach(p => { const el = $("in_" + p.id); if (el) el.value = ""; });
+  renderRoundEntry();
+}
+
+async function validateRound() {
+  const entries = {};
+  let any = false;
+  const invalid = [];
+
+  for (const p of state.players) {
+    const el = $("in_" + p.id);
+    // Un « - » seul ne porte aucune information : on le traite comme un champ vide.
+    const rawVal = (el ? el.value : "").trim().replace(/^-$/, "");
+    let v = 0;
+    if (rawVal !== "") {
+      // parseInt("12abc") vaut 12 sans broncher : on exige un entier propre.
+      if (!/^-?\d+$/.test(rawVal)) { invalid.push(p.name); continue; }
+      v = parseInt(rawVal, 10);
+      any = true;
+    }
+    const cards = draft[p.id] || null;
+    entries[p.id] = { cards, score: v, manual: !cards };
+  }
+
+  if (invalid.length) {
+    toast(`Score illisible pour ${invalid.join(", ")} — chiffres uniquement.`);
+    return;
+  }
+  if (!any) {
+    const ok = await askConfirm({
+      icon: "0️⃣",
+      title: "Manche à zéro ?",
+      message: "Aucun point saisi. Valider une manche à 0 pour tout le monde ?",
+      yes: "Valider quand même", danger: false
+    });
+    if (!ok) return;
+  }
+
+  state.rounds.push({ id: uid(), entries });
+  draft = {};
+  save();
+  clearRoundInputs();
+  renderGame();
+
+  const res = winners(totals());
+  if (res && !res.tie) { setTimeout(() => openVictory(), 320); return; }
+  if (res && res.tie) { toast("Égalité — on rejoue une manche !"); }
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function undoLastRound() {
+  if (!state.rounds.length) { toast("Aucune manche à annuler."); return; }
+  const ok = await askConfirm({
+    icon: "↩",
+    title: `Annuler la manche ${state.rounds.length} ?`,
+    message: "Les points de cette manche seront retirés à tous les joueurs.",
+    yes: "Annuler la manche"
+  });
+  if (!ok) return;
+  state.rounds.pop();
+  save();
+  renderGame();
+  toast("Manche annulée.");
+}
+
+function renderHistory(t) {
+  const box = $("history");
+  if (!state.rounds.length) {
+    box.innerHTML = `<div class="empty-state" style="padding:12px"><div class="empty-icon">📊</div><p>Les manches validées apparaîtront ici.</p></div>`;
+    return;
+  }
+  let h = '<details open><summary><span class="summary-arrow" aria-hidden="true">▶</span> Détail des manches</summary><div style="overflow-x:auto"><table class="htable"><thead><tr><th class="pname">Joueur</th>';
+  state.rounds.forEach((_, i) => h += `<th>M${i + 1}</th>`);
+  h += "<th>Total</th></tr></thead><tbody>";
+  state.players.forEach(p => {
+    h += `<tr><td class="pname">${esc(p.name)}</td>`;
+    state.rounds.forEach(r => {
+      const e = r.entries[p.id];
+      const g = giftsAgainst(r, p.id);
+      const v = roundScoreFor(r, p.id);
+      // On ne marque « bust » que sur un vrai bust déclaré, pas sur un 0 légitime.
+      const isBust = !!(e && e.cards && e.cards.bust);
+      const cls = isBust ? "bust" : g ? "gift" : v < 0 ? "neg" : "";
+      const title = isBust ? "A sauté" : g ? `${g} Flip 7 reçu${g > 1 ? "s" : ""} en malus` : "";
+      h += `<td class="${cls}"${title ? ` title="${title}"` : ""}>${isBust ? "✗" : v}${g ? " 🎁" : ""}</td>`;
+    });
+    h += `<td class="${t[p.id] < 0 ? "neg" : ""}"><b>${t[p.id]}</b></td></tr>`;
+  });
+  h += "</tbody></table></div></details>";
+  box.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════
+   CALCULATEUR
+   ═══════════════════════════════════════════ */
+let calc = { playerId: null, sel: newSelection() };
+
+function countOf(sel, n) { return sel.numbers.filter(x => x === n).length; }
+
+function setCount(sel, n, c) {
+  sel.numbers = sel.numbers.filter(x => x !== n);
+  for (let i = 0; i < c; i++) sel.numbers.push(n);
+  sel.numbers.sort((a, b) => a - b);
+}
+
+/* La carte 13 est tri-état (0 → 1 → 2 → 0), mais l'état 2 n'est
+   accessible qu'avec le 13 Porte-bonheur. Toutes les autres sont binaires. */
+function cycleNumber(n) {
+  const sel = calc.sel;
+  const cur = countOf(sel, n);
+  const maxC = (n === 13 && sel.luckyThirteen) ? 2 : 1;
+  setCount(sel, n, cur >= maxC ? 0 : cur + 1);
+  refresh();
+}
+
+function openCalc(pid) {
+  const p = state.players.find(x => x.id === pid);
+  if (!p) return;
+  calc = { playerId: pid, sel: draft[pid] ? normalizeSelection(draft[pid]) : newSelection() };
+  $("calcWho").textContent = p.name;
+
+  const veng = state.variant === "vengeance";
+  $("stdSection").classList.toggle("hidden", veng);
+  $("vengSection").classList.toggle("hidden", !veng);
+  $("numLabel").textContent = veng ? "📟 Cartes chiffres (0 à 13)" : "📟 Cartes chiffres (0 à 12)";
+
+  buildNumbers(veng);
+  if (veng) { buildMalus(); buildSpecials(); } else { buildMods(); }
+
+  $("cardArea").classList.toggle("hidden", calc.sel.bust);
+  $("bustBtn").classList.toggle("on", calc.sel.bust);
+  refresh();
+  openSheet("calcOverlay");
+  setTimeout(() => $("bustBtn").focus(), 60);
+}
+
+function buildNumbers(veng) {
+  const g = $("numGrid");
+  g.innerHTML = "";
+  const max = veng ? 13 : 12;
+  for (let n = 0; n <= max; n++) {
+    const c = document.createElement("div");
+    c.className = "chip";
+    c.tabIndex = 0;
+    c.dataset.num = String(n);
+    c.setAttribute("role", "button");
+    // En Vengeance, la carte 0 EST Le Zéro : elle compte dans les 7
+    // mais annule la manche si le Flip 7 n'est pas atteint.
+    c.innerHTML = (veng && n === 0)
+      ? `0<span class="sub-label">Le Zéro</span>`
+      : String(n);
+    c.onclick = () => cycleNumber(n);
+    c.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); cycleNumber(n); } };
+    g.appendChild(c);
+  }
+}
+
+function buildMods() {
+  const mg = $("modGrid"); mg.innerHTML = "";
+  MODS.forEach(m => {
+    const c = document.createElement("div");
+    c.className = "chip mod"; c.tabIndex = 0; c.dataset.mod = String(m);
+    c.setAttribute("role", "checkbox");
+    c.textContent = "+" + m;
+    const t = () => {
+      const s = calc.sel;
+      s.mods = s.mods.includes(m) ? s.mods.filter(x => x !== m) : [...s.mods, m];
+      refresh();
+    };
+    c.onclick = t;
+    c.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); t(); } };
+    mg.appendChild(c);
+  });
+  const xg = $("x2Grid"); xg.innerHTML = "";
+  const x = document.createElement("div");
+  x.className = "chip x2"; x.tabIndex = 0; x.id = "x2Chip";
+  x.setAttribute("role", "checkbox");
+  x.textContent = "×2";
+  const tx = () => { calc.sel.x2 = !calc.sel.x2; refresh(); };
+  x.onclick = tx;
+  x.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); tx(); } };
+  xg.appendChild(x);
+}
+
+function buildMalus() {
+  const g = $("malusGrid"); g.innerHTML = "";
+  MALUS.forEach(m => {
+    const c = document.createElement("div");
+    c.className = "chip malus"; c.tabIndex = 0; c.dataset.malus = String(m);
+    c.setAttribute("role", "checkbox");
+    c.textContent = String(m);
+    const t = () => {
+      const s = calc.sel;
+      s.malus = s.malus.includes(m) ? s.malus.filter(x => x !== m) : [...s.malus, m];
+      refresh();
+    };
+    c.onclick = t;
+    c.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); t(); } };
+    g.appendChild(c);
+  });
+  const d = document.createElement("div");
+  d.className = "chip div2"; d.tabIndex = 0; d.id = "div2Chip";
+  d.setAttribute("role", "button");
+  d.textContent = "÷2";
+  const td = () => {
+    const s = calc.sel;
+    const n = s.malus.filter(x => x === DIV2).length;
+    s.malus = s.malus.filter(x => x !== DIV2);
+    // Deux ÷2 peuvent tomber sur le même joueur : l'effet se cumule.
+    const next = n >= 2 ? 0 : n + 1;
+    for (let i = 0; i < next; i++) s.malus.push(DIV2);
+    refresh();
+  };
+  d.onclick = td;
+  d.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); td(); } };
+  g.appendChild(d);
+}
+
+function buildSpecials() {
+  const g = $("specialGrid"); g.innerHTML = "";
+
+  const lucky = document.createElement("button");
+  lucky.type = "button";
+  lucky.className = "special-chip"; lucky.id = "luckyChip";
+  lucky.setAttribute("aria-pressed", "false");
+  lucky.innerHTML = `<span class="ic">🍀</span><span class="tx"><b>13 Porte-bonheur</b><span>Autorise un second 13 sans sauter</span></span>`;
+  lucky.onclick = () => {
+    const s = calc.sel;
+    s.luckyThirteen = !s.luckyThirteen;
+    // En le retirant, la paire de 13 devient illégale : on retombe à un seul.
+    if (!s.luckyThirteen && countOf(s, 13) > 1) {
+      setCount(s, 13, 1);
+      toast("Porte-bonheur retiré — il ne reste qu'un 13.");
+    }
+    refresh();
+  };
+  g.appendChild(lucky);
+
+  const unlucky = document.createElement("button");
+  unlucky.type = "button";
+  unlucky.className = "special-chip"; unlucky.id = "unluckyChip";
+  unlucky.innerHTML = `<span class="ic">☠️</span><span class="tx"><b>7 Porte-malheur</b><span>Défausse tout et ne garde que le 7</span></span>`;
+  unlucky.onclick = async () => {
+    const s = calc.sel;
+    const ok = await askConfirm({
+      icon: "☠️",
+      title: "7 Porte-malheur",
+      message: "Défausser toutes les autres cartes et ne garder que le 7 ?",
+      yes: "Tout défausser"
+    });
+    if (!ok) return;
+    s.numbers = [7]; s.malus = []; s.mods = []; s.x2 = false;
+    s.luckyThirteen = false; s.flip7Gift = null;
+    s.discardedByUnlucky7 = true;
+    refresh();
+    toast("Cartes défaussées — il ne reste que le 7.");
+  };
+  g.appendChild(unlucky);
+}
+
+function toggleBust() {
+  calc.sel.bust = !calc.sel.bust;
+  $("bustBtn").classList.toggle("on", calc.sel.bust);
+  $("cardArea").classList.toggle("hidden", calc.sel.bust);
+  refresh();
+}
+
+function buildGiftOptions(flip7) {
+  const box = $("giftBox");
+  const show = flip7 && state.variant === "vengeance" && state.merciless;
+  box.classList.toggle("hidden", !show);
+  if (!show) { if (calc.sel.flip7Gift) calc.sel.flip7Gift = null; return; }
+
+  const opts = $("giftOpts");
+  opts.innerHTML = "";
+  const mk = (label, val) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.setAttribute("aria-pressed", String(calc.sel.flip7Gift === val));
+    b.onclick = () => { calc.sel.flip7Gift = val; refresh(); };
+    opts.appendChild(b);
+  };
+  mk("Je les garde", null);
+  state.players.filter(p => p.id !== calc.playerId).forEach(p => mk(`−15 à ${p.name}`, p.id));
+}
+
+function refresh() {
+  const sel = calc.sel;
+  const veng = state.variant === "vengeance";
+
+  // États visuels des cartes chiffres
+  $("numGrid").querySelectorAll("[data-num]").forEach(c => {
+    const n = Number(c.dataset.num);
+    const cnt = countOf(sel, n);
+    c.classList.toggle("on", cnt > 0);
+    c.setAttribute("aria-pressed", String(cnt > 0));
+    const old = c.querySelector(".count");
+    if (old) old.remove();
+    if (cnt > 1) {
+      const b = document.createElement("span");
+      b.className = "count"; b.textContent = "×" + cnt;
+      c.appendChild(b);
+    }
+  });
+
+  if (veng) {
+    $("malusGrid").querySelectorAll("[data-malus]").forEach(c => {
+      const m = Number(c.dataset.malus);
+      const on = sel.malus.includes(m);
+      c.classList.toggle("on", on);
+      c.setAttribute("aria-checked", String(on));
+    });
+    const dc = $("div2Chip");
+    if (dc) {
+      const n = sel.malus.filter(x => x === DIV2).length;
+      dc.classList.toggle("on", n > 0);
+      const old = dc.querySelector(".count"); if (old) old.remove();
+      if (n > 1) { const b = document.createElement("span"); b.className = "count"; b.textContent = "×" + n; dc.appendChild(b); }
+    }
+    const lc = $("luckyChip");
+    if (lc) { lc.classList.toggle("on", sel.luckyThirteen); lc.setAttribute("aria-pressed", String(sel.luckyThirteen)); }
+    const uc = $("unluckyChip");
+    if (uc) uc.classList.toggle("on", sel.discardedByUnlucky7);
+  } else {
+    $("modGrid").querySelectorAll("[data-mod]").forEach(c => {
+      const m = Number(c.dataset.mod);
+      const on = sel.mods.includes(m);
+      c.classList.toggle("on", on);
+      c.setAttribute("aria-checked", String(on));
+    });
+    const xc = $("x2Chip");
+    if (xc) { xc.classList.toggle("on", sel.x2); xc.setAttribute("aria-checked", String(sel.x2)); }
+  }
+
+  const r = computeScore(sel, state.variant, state.merciless);
+  buildGiftOptions(r.flip7);
+  // Le don peut changer le total : on recalcule après l'avoir résolu.
+  const r2 = computeScore(sel, state.variant, state.merciless);
+
+  // Récapitulatif ligne à ligne
+  const lines = $("calcLines");
+  lines.innerHTML = "";
+  r2.lines.forEach(l => {
+    const d = document.createElement("div");
+    d.className = "calc-line" + (l.kind ? " " + l.kind : "");
+    d.innerHTML = `<span class="lbl">${esc(l.label)}${l.detail ? `<span class="detail">${esc(l.detail)}</span>` : ""}</span><span class="dots"></span><span class="val">${l.value}</span>`;
+    lines.appendChild(d);
+  });
+
+  const tot = $("calcTotal");
+  tot.textContent = r2.total;
+  tot.classList.toggle("neg", r2.total < 0);
+  $("flip7Badge").classList.toggle("hidden", !r2.flip7);
+
+  // Validation douce
+  const warns = validateSelection(sel);
+  const wb = $("warnBox");
+  wb.classList.toggle("show", warns.length > 0 && !sel.bust);
+  $("warnList").innerHTML = warns.map(w => `<li>${esc(w)}</li>`).join("");
+}
+
+function applyCalc() {
+  const r = computeScore(calc.sel, state.variant, state.merciless);
+  const el = $("in_" + calc.playerId);
+  if (el) el.value = String(r.total);
+  draft[calc.playerId] = normalizeSelection(calc.sel);
+  closeCalc();
+  renderRoundEntry();
+  // renderRoundEntry a reconstruit les inputs : on réinjecte les valeurs saisies.
+  state.players.forEach(p => {
+    if (draft[p.id]) {
+      const e = $("in_" + p.id);
+      if (e) e.value = String(computeScore(draft[p.id], state.variant, state.merciless).total);
+    }
+  });
+}
+
+function closeCalc(fromPop) { closeSheet("calcOverlay", fromPop); }
+
+/* ═══════════════════════════════════════════
+   VICTOIRE & PARTAGE
+   ═══════════════════════════════════════════ */
+function openVictory() {
+  const t = totals();
+  const res = winners(t);
+  if (!res || res.tie) return;
+
+  $("victoryTitle").textContent = res.winners[0].name;
+  $("victorySub").textContent = "remporte la partie !";
+
+  const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+  const vLabel = state.variant === "vengeance"
+    ? (state.merciless ? "Vengeance Sans Pitié" : "Vengeance")
+    : "Standard";
+  $("victoryMeta").textContent =
+    `${vLabel} · ${state.rounds.length} ${plural(state.rounds.length, "manche", "manches")} · objectif ${state.target} pts · ${today}`;
+
+  const rank = [...state.players].sort((a, b) => t[b.id] - t[a.id]);
+  const vs = $("victoryScores");
+  vs.innerHTML = "";
+  rank.forEach((p, idx) => {
+    const oi = state.players.findIndex(x => x.id === p.id);
+    const row = document.createElement("div");
+    row.className = "victory-score-row";
+    row.innerHTML = `<span class="vsr-rank${idx === 0 ? " r1" : ""}">${idx + 1}</span>
+      <div class="vsr-av ${avc(oi)}"></div><span class="vsr-name"></span>
+      <span class="vsr-pts${t[p.id] < 0 ? " neg" : ""}">${t[p.id]}</span>`;
+    row.querySelector(".vsr-av").textContent = ini(p.name);
+    row.querySelector(".vsr-name").textContent = p.name;
+    vs.appendChild(row);
+  });
+
+  $("shareBtn").style.display = (navigator.share || navigator.clipboard) ? "" : "none";
+  openSheet("victoryOverlay");
+}
+
+function closeVictory(fromPop) { closeSheet("victoryOverlay", fromPop); }
+
+function buildShareText() {
+  const t = totals();
+  const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long" });
+  const rank = [...state.players].sort((a, b) => t[b.id] - t[a.id]);
+  const medals = ["🥇", "🥈", "🥉"];
+  const vLabel = state.variant === "vengeance"
+    ? (state.merciless ? " · Vengeance Sans Pitié" : " · Vengeance")
+    : "";
+  const lines = [`🎴 Flip 7${vLabel} — Partie du ${today}`];
+  rank.forEach((p, i) => lines.push(`${medals[i] || (i + 1) + "."} ${p.name} — ${t[p.id]} pts`));
+  lines.push(`Objectif : ${state.target} pts · ${state.rounds.length} ${plural(state.rounds.length, "manche", "manches")}`);
+  return lines.join("\n");
+}
+
+async function shareResult() {
+  const text = buildShareText();
+  if (navigator.share) {
+    try { await navigator.share({ title: "Flip 7 — Scores", text }); return; }
+    catch (e) { if (e && e.name === "AbortError") return; }
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    toast("Scores copiés dans le presse-papier ✅");
+  } catch (e) {
+    toast("Copie impossible — sélectionne le texte à la main.");
+  }
+}
+
+/* ═══════════════════════════════════════════
+   ÉVÉNEMENTS
+   ═══════════════════════════════════════════ */
+$("addPlayerBtn").onclick = addPlayer;
+$("playerName").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addPlayer(); } });
+$("segStandard").onclick = () => setVariant("standard");
+$("segVengeance").onclick = () => setVariant("vengeance");
+$("mercilessSwitch").onclick = () => {
+  if (state.rounds.length) { toast("Verrouillé — la partie est commencée."); return; }
+  state.merciless = !state.merciless; save(); renderVariant();
+};
+$("startBtn").onclick = startGame;
+$("validateBtn").onclick = validateRound;
+$("clearBtn").onclick = clearRoundInputs;
+$("undoBtn").onclick = undoLastRound;
+$("editPlayersBtn").onclick = backToSetup;
+$("resetBtn").onclick = resetAll;
+$("bustBtn").onclick = toggleBust;
+$("applyCalcBtn").onclick = applyCalc;
+$("cancelCalcBtn").onclick = () => closeCalc();
+$("shareBtn").onclick = shareResult;
+$("replayBtn").onclick = replayWithSamePlayers;
+$("newGameBtn").onclick = () => { closeVictory(); resetAll(); };
+$("closeVictoryBtn").onclick = () => closeVictory();
+$("confirmYes").onclick = () => closeConfirm(true);
+$("confirmNo").onclick = () => closeConfirm(false);
+
+$("calcOverlay").addEventListener("click", e => { if (e.target.id === "calcOverlay") closeCalc(); });
+$("confirmOverlay").addEventListener("click", e => { if (e.target.id === "confirmOverlay") closeConfirm(false); });
+
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  const top = sheetStack[sheetStack.length - 1];
+  if (top === "confirmOverlay") closeConfirm(false);
+  else if (top === "calcOverlay") closeCalc();
+  else if (top === "victoryOverlay") closeVictory();
+});
+
+/* ═══════════════════════════════════════════
+   PWA
+   ═══════════════════════════════════════════ */
+/* Ouverte en local (file://), la page a une origine « null » : certains
+   navigateurs y lèvent une exception SYNCHRONE, qu'un .catch() ne rattrape
+   pas. L'application doit rester utilisable dans ce cas — elle perd
+   seulement l'installation et le mode hors ligne. */
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  window.addEventListener("load", () => {
+    try { navigator.serviceWorker.register("./sw.js").catch(() => {}); }
+    catch (e) { /* origine non supportée : sans conséquence */ }
+  });
+}
+
+/* ═══════════════════════════════════════════
+   INIT
+   ═══════════════════════════════════════════ */
+load();
+$("targetScore").value = state.target;
+renderPlayerList();
+renderVariant();
+if (state.started && state.players.length >= 2) showGame();
+
+/* Exposé pour le harnais de test automatisé. */
+window.__flip7 = { get state(){return state}, totals, winners, computeScore, isFlip7, validateSelection, newSelection, roundScoreFor };
+</script>
+</body>
+</html>
