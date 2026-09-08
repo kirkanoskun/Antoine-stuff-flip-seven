@@ -8,23 +8,49 @@ Installable comme une vraie application sur iPhone et Android.
 
 ## Installation
 
-### Sur téléphone (recommandé)
+### En ligne — https://flip7.antoinedebaets.com
 
 L'application doit être servie en **HTTPS** pour être installable : le service worker,
 le partage natif et l'invite d'installation sont désactivés en `file://`. Ouvrir le
 fichier depuis l'app Fichiers de l'iPhone donne une page web, pas une application.
 
-Le plus simple est **GitHub Pages**, gratuit et sans serveur à gérer :
+L'hébergement passe par **GitHub Pages**, gratuit, avec certificat HTTPS automatique.
+Le fichier [`CNAME`](CNAME) à la racine déclare le domaine ; il ne reste que deux
+réglages à faire une seule fois.
 
-1. Sur le dépôt GitHub → **Settings** → **Pages**
-2. *Source* : **Deploy from a branch**
-3. *Branch* : la branche voulue, dossier **`/ (root)`** → **Save**
-4. Après une minute, ouvrir l'URL fournie sur le téléphone
-5. **iPhone** (Safari) : Partager → *Sur l'écran d'accueil*
-   **Android** (Chrome) : menu ⋮ → *Installer l'application*
+**1. DNS — chez le registrar du domaine `antoinedebaets.com`**
+
+| Type | Nom / Hôte | Valeur | TTL |
+|---|---|---|---|
+| `CNAME` | `flip7` | `kirkanoskun.github.io.` | par défaut |
+
+Le point final de la valeur est volontaire. Ne pas créer d'enregistrement `A` en plus :
+un nom ne peut pas porter à la fois un `CNAME` et un `A`.
+
+**2. GitHub — Settings → Pages**
+
+- *Source* : **Deploy from a branch**
+- *Branch* : `main`, dossier **`/ (root)`** → **Save**
+- *Custom domain* : `flip7.antoinedebaets.com` (déjà prérempli par le fichier `CNAME`)
+- Attendre la validation du certificat, puis cocher **Enforce HTTPS**
+
+La propagation DNS prend de quelques minutes à quelques heures, et le certificat
+est émis dans la foulée. `Enforce HTTPS` reste grisé tant que le certificat n'est
+pas prêt : c'est normal, il suffit de repasser plus tard.
+
+**3. Installer sur le téléphone**
+
+- **iPhone** (Safari) : Partager → *Sur l'écran d'accueil*
+- **Android** (Chrome) : menu ⋮ → *Installer l'application*
 
 Une fois installée, l'application fonctionne **hors ligne** et se met à jour toute
 seule au chargement suivant après chaque déploiement.
+
+> **Ajouter d'autres applications sur le domaine.** Un sous-domaine par application
+> (`autreapp.antoinedebaets.com`) donne à chacune une origine web distincte : leurs
+> service workers et leurs données locales restent cloisonnés. Servir plusieurs
+> applications sous des chemins d'une même origine les ferait cohabiter, avec un
+> risque de collision.
 
 ### En local
 
