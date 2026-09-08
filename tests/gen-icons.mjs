@@ -76,8 +76,13 @@ function vectorPage({ size, maskable }) {
 
 /* ── Rendu depuis une image source ─────────── */
 function sourcePage({ size, maskable, uri }) {
-  // Le contenu d'une icône maskable doit rester dans les 80 % centraux.
-  const scale = maskable ? 0.78 : 1;
+  // Zone sûre d'une icône maskable. Le masque le plus agressif est un
+  // cercle inscrit dans le canevas (rayon = 50 %). Pour qu'un visuel CARRÉ
+  // y survive en entier, son demi-diagonale doit rester sous ce rayon :
+  //   côté × √2 / 2 ≤ 0,5  →  côté ≤ 70,7 %
+  // D'où 70 %, qui garantit que le cadre Art Déco n'est jamais rogné,
+  // quel que soit le lanceur Android.
+  const scale = maskable ? 0.70 : 1;
   return `<!doctype html><meta charset="utf-8">
 <style>html,body{margin:0;width:${size}px;height:${size}px;overflow:hidden;background:#fff}canvas{display:block}</style>
 <canvas id="c" width="${size}" height="${size}"></canvas>

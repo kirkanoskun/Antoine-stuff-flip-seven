@@ -3,18 +3,21 @@
    ═══════════════════════════════════════════
    Bump APP_CACHE à chaque livraison : sans ça, les utilisateurs ayant
    installé la PWA resteraient bloqués sur l'ancienne version. */
-const VERSION   = "v4";
+const VERSION   = "v5";
 const APP_CACHE = `flip7-app-${VERSION}`;
 
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-maskable-192.png",
-  "./icons/icon-maskable-512.png",
+  // Seules les petites icônes sont précachées. Les 512 px ne servent qu'à
+  // l'invite d'installation et à l'écran de démarrage — deux moments qui se
+  // produisent en ligne — et pèsent à elles deux plus que le reste de
+  // l'application. Le gestionnaire « cache-first » les conservera si elles
+  // sont demandées.
   "./icons/icon-180.png",
+  "./icons/icon-192.png",
+  "./icons/icon-maskable-192.png",
   "./icons/favicon-32.png",
   // Polices auto-hébergées. On ne précache que le sous-ensemble latin :
   // latin-ext n'est demandé que si un prénom l'exige, et le gestionnaire
