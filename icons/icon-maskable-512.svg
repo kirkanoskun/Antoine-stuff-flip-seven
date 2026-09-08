@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Maskable: contenu dans la safe zone (80% central = 204–308px) -->
-  <rect width="512" height="512" fill="#3DBFBA"/>
-  <!-- FLIP -->
-  <text x="256" y="210" font-family="Arial Black, Impact, sans-serif" font-size="78" font-weight="900" fill="rgba(255,255,255,.72)" text-anchor="middle" letter-spacing="10">FLIP</text>
-  <!-- 7 -->
-  <text x="260" y="400" font-family="Arial Black, Impact, sans-serif" font-size="260" font-weight="900" fill="#FFFFFF" text-anchor="middle">7</text>
-</svg>

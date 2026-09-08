@@ -1,31 +1,41 @@
 {
-  "name": "Flip 7",
+  "id": "/flip7-score-tracker",
+  "name": "Flip 7 — Compteur de points",
   "short_name": "Flip 7",
-  "description": "Compteur de points pour le jeu de cartes Flip 7",
-  "start_url": "./Flip%207%20Score%20Tracker%20App.html",
+  "description": "Compteur de points pour le jeu de cartes Flip 7, avec la variante Vengeance.",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#3DBFBA",
   "theme_color": "#3DBFBA",
   "lang": "fr",
+  "dir": "ltr",
   "categories": ["games", "utilities"],
   "icons": [
     {
-      "src": "./icons/icon-512.svg",
+      "src": "./icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icons/icon-512.svg",
+      "src": "./icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./icons/icon-maskable-512.svg",
+      "src": "./icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "./icons/icon-maskable-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ]
