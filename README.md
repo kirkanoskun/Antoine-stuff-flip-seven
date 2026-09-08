@@ -161,3 +161,9 @@ node tests/gen-icons.mjs
   `VERSION` dans `sw.js` à chaque déploiement.
 - **Icônes** : PNG uniquement — iOS ignore le SVG pour `apple-touch-icon` et
   remplacerait l'icône par une capture de la page.
+- **Polices** : Nunito et Fredoka One sont servies depuis `fonts/`. Aucune requête
+  externe, donc l'identité visuelle est correcte dès le premier affichage, y compris
+  hors ligne. Nunito est une police *variable* : un seul fichier couvre les graisses
+  600 à 900. Le sous-ensemble `latin-ext` n'est déclaré que via `unicode-range` — le
+  navigateur ne le télécharge que si un prénom contient un caractère qui l'exige,
+  et seul `latin` est précaché (≈ 53 ko au premier chargement).

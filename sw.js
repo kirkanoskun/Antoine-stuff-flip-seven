@@ -3,23 +3,28 @@
    ═══════════════════════════════════════════
    Bump APP_CACHE à chaque livraison : sans ça, les utilisateurs ayant
    installé la PWA resteraient bloqués sur l'ancienne version. */
-const VERSION    = "v3";
-const APP_CACHE  = `flip7-app-${VERSION}`;
-const FONT_CACHE = "flip7-fonts-v1";   // versionné à part : les polices ne changent pas
+const VERSION   = "v5";
+const APP_CACHE = `flip7-app-${VERSION}`;
 
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-maskable-192.png",
-  "./icons/icon-maskable-512.png",
+  // Seules les petites icônes sont précachées. Les 512 px ne servent qu'à
+  // l'invite d'installation et à l'écran de démarrage — deux moments qui se
+  // produisent en ligne — et pèsent à elles deux plus que le reste de
+  // l'application. Le gestionnaire « cache-first » les conservera si elles
+  // sont demandées.
   "./icons/icon-180.png",
+  "./icons/icon-192.png",
+  "./icons/icon-maskable-192.png",
   "./icons/favicon-32.png",
+  // Polices auto-hébergées. On ne précache que le sous-ensemble latin :
+  // latin-ext n'est demandé que si un prénom l'exige, et le gestionnaire
+  // « cache-first » ci-dessous le conservera à ce moment-là.
+  "./fonts/nunito-latin.woff2",
+  "./fonts/fredoka-latin.woff2",
 ];
-
-const FONT_HOSTS = new Set(["fonts.googleapis.com", "fonts.gstatic.com"]);
 
 /* ── Install ─────────────────────────────────
    cache.addAll est atomique : une seule URL en échec fait échouer toute
@@ -44,20 +49,20 @@ self.addEventListener("activate", event => {
     if (self.registration.navigationPreload) {
       try { await self.registration.navigationPreload.enable(); } catch (e) {}
     }
+    // Tout ce qui n'est pas le cache courant part, y compris l'ancien cache
+    // des polices Google, devenu inutile depuis leur auto-hébergement.
     const keys = await caches.keys();
-    await Promise.all(
-      keys.filter(k => k !== APP_CACHE && k !== FONT_CACHE).map(k => caches.delete(k))
-    );
+    await Promise.all(keys.filter(k => k !== APP_CACHE).map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
 
 /* ── Fetch ───────────────────────────────────
-   Trois stratégies :
+   Deux stratégies. Toutes les ressources sont désormais servies depuis
+   la même origine : il n'y a plus aucune requête externe à intercepter.
    · navigation  → stale-while-revalidate, pour que les mises à jour
                    se propagent d'elles-mêmes au chargement suivant
-   · polices     → cache-first, elles sont immuables
-   · reste       → cache-first avec repli réseau */
+   · reste       → cache-first avec repli réseau (polices comprises) */
 self.addEventListener("fetch", event => {
   const req = event.request;
   if (req.method !== "GET") return;
@@ -65,25 +70,6 @@ self.addEventListener("fetch", event => {
   let url;
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.protocol !== "http:" && url.protocol !== "https:") return;
-
-  /* Polices Google — cache-first */
-  if (FONT_HOSTS.has(url.hostname)) {
-    event.respondWith((async () => {
-      const cache = await caches.open(FONT_CACHE);
-      const hit = await cache.match(req);
-      if (hit) return hit;
-      try {
-        const res = await fetch(req);
-        // On ne met en cache que les réponses exploitables. Les réponses
-        // opaques (cors: no-cors) ont un statut 0 et pollueraient le cache.
-        if (res && (res.ok || res.type === "opaque")) cache.put(req, res.clone());
-        return res;
-      } catch (e) {
-        return hit || Response.error();
-      }
-    })());
-    return;
-  }
 
   /* Navigation — stale-while-revalidate */
   if (req.mode === "navigate") {

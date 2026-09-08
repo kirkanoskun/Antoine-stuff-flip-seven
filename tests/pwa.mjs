@@ -19,6 +19,13 @@ const page = await ctx.newPage();
 const bad404 = [];
 page.on('response', r => { if (r.status() >= 400 && new URL(r.url()).origin === BASE) bad404.push(`${r.status()} ${r.url()}`); });
 
+// Toute requête sortant de l'origine trahirait une dépendance externe.
+const externes = [];
+page.on('request', r => {
+  const u = new URL(r.url());
+  if (u.origin !== BASE && u.protocol.startsWith('http')) externes.push(r.url());
+});
+
 await page.goto(`${BASE}/index.html`, { waitUntil: 'load' });
 
 /* ── Manifest ── */
@@ -105,6 +112,27 @@ check('cache applicatif créé', !!appCache, true);
 check('index.html précaché', appCache[1].some(p => p.endsWith('/index.html')), true);
 check('icônes précachées', appCache[1].filter(p => p.includes('/icons/')).length >= 4, true);
 
+/* ── Polices auto-hébergées ── */
+check('aucune requête vers un domaine externe', externes, []);
+
+const fonts = await page.evaluate(async () => {
+  await document.fonts.ready;
+  const chargees = [...document.fonts].filter(f => f.status === 'loaded').map(f => f.family);
+  return {
+    nunito: chargees.includes('Nunito'),
+    fredoka: chargees.includes('Fredoka One'),
+    // La police doit réellement servir au rendu, pas seulement être déclarée.
+    rendueNunito: document.fonts.check('900 16px Nunito'),
+    rendueFredoka: document.fonts.check('400 16px "Fredoka One"'),
+  };
+});
+check('Nunito chargée depuis le dépôt', fonts.nunito, true);
+check('Fredoka One chargée depuis le dépôt', fonts.fredoka, true);
+check('Nunito 900 disponible au rendu', fonts.rendueNunito, true);
+check('Fredoka One disponible au rendu', fonts.rendueFredoka, true);
+
+check('polices précachées', appCache[1].filter(p => p.includes('/fonts/')).length >= 2, true);
+
 /* ── Hors ligne ── */
 await ctx.setOffline(true);
 const offlineOk = await page.evaluate(async () => {
@@ -115,6 +143,14 @@ check('index.html servi depuis le cache hors ligne', offlineOk, true);
 await page.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded' }).catch(() => {});
 const worksOffline = await page.evaluate(() => !!document.getElementById('startBtn'));
 check('application utilisable hors ligne', worksOffline, true);
+
+// Le vrai test du §5.4 : l'identité visuelle tient dès le premier
+// chargement hors ligne, sans repli sur une police système.
+const fontsOffline = await page.evaluate(async () => {
+  await document.fonts.ready;
+  return document.fonts.check('900 16px Nunito') && document.fonts.check('400 16px "Fredoka One"');
+});
+check('polices rendues correctement hors ligne', fontsOffline, true);
 await ctx.setOffline(false);
 
 check('aucune ressource locale en 404', bad404, []);
