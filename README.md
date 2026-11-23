@@ -78,7 +78,11 @@ des manches déjà notées.
 ### Pendant la partie
 - Saisie directe des points, ou **calculateur de cartes** 🃏
 - Classement trié en direct, points restants et barre de progression
-- **Annulation** de la dernière manche
+- **Annulation** de la dernière manche, avec **↩ Rétablir** pendant quelques secondes
+- **Correction d'une manche passée** : touche une case de l'historique pour
+  rouvrir ce score, à la main ou en recomptant les cartes. La composition en
+  cartes de chaque manche est conservée et rappelée.
+- 📖 **Rappel des règles** dans l'app, adapté à la variante en cours
 - Historique détaillé, manche par manche
 - Sauvegarde automatique — fermer et rouvrir ne perd rien
 
