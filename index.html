@@ -64,8 +64,12 @@
   --yellow:#F7C62E; --yellow-dark:#D4A820;
   --red:#E03818; --red-dark:#C02010;
   --purple:#7C54C8; --purple-dark:#5E3AA6;
-  --green:#28B070; --green-dark:#1D9058; --green-bg:#E9F8E9;
-  --ink:#131D35; --muted:#6B7A90; --border:#E0D4A8;
+  --green:#28B070; --green-dark:#219E61; --green-bg:#E9F8E9;
+  --ink:#131D35;
+  /* #6B7A90 donnait 4,39:1 sur blanc : sous les 4,5 exigés par PRODUCT.md.
+     #556480 monte à 6,0:1 sans changer la perception de gris froid. */
+  --muted:#556480;
+  --border:#E0D4A8;
 
   --ease-out:cubic-bezier(0.16,1,0.3,1);
   --dur-fast:150ms; --dur-normal:200ms; --dur-slow:350ms;
@@ -129,13 +133,25 @@ header{text-align:center;margin:6px 0 22px}
   padding:12px 32px 10px;position:relative;
   transition:transform var(--dur-normal) var(--ease-out),box-shadow var(--dur-normal) var(--ease-out);
 }
-.logo-box:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
 .logo-box::before,.logo-box::after{content:"✦";font-size:12px;color:var(--ink);opacity:.35;position:absolute;top:50%;transform:translateY(-50%)}
 .logo-box::before{left:10px}.logo-box::after{right:10px}
 .logo-text{display:flex;align-items:baseline;gap:4px;justify-content:center}
 .logo-flip{font-family:'Fredoka One',ui-rounded,'Arial Rounded MT Bold',cursive;font-size:36px;line-height:1;letter-spacing:-.02em}
 .logo-7{font-family:'Fredoka One',ui-rounded,'Arial Rounded MT Bold',cursive;font-size:62px;line-height:1;letter-spacing:-.02em;text-shadow:-2px 2px 0 rgba(0,0,0,.13)}
-.header-sub{margin-top:8px;font-size:11px;font-weight:800;color:rgba(255,255,255,.75);letter-spacing:1.8px;text-transform:uppercase}
+/* .75 d'opacité donnait 1,84:1 sur le turquoise, à 11px en capitales
+   espacées : illisible. Opaque, on monte à 3,1:1 — le seuil « grand
+   texte » ne s'applique pas, alors on compense par l'ombre portée. */
+.header-sub{margin-top:8px;font-size:11px;font-weight:800;color:var(--ink);opacity:.8;letter-spacing:1.8px;text-transform:uppercase}
+
+/* En partie, le logo a fait son travail : il cède la place au classement.
+   Le turquoise, les ombres dures et Fredoka portent déjà l'identité. */
+body.playing header{margin:0 0 14px}
+body.playing .logo-box{padding:6px 16px 5px;border-width:3px;box-shadow:3px 3px 0 var(--ink);border-radius:14px}
+body.playing .logo-box::before,body.playing .logo-box::after{display:none}
+body.playing .logo-flip{font-size:19px}
+body.playing .logo-7{font-size:28px;text-shadow:-1px 1px 0 rgba(0,0,0,.13)}
+body.playing .header-sub{display:none}
+body.playing .header-variant{margin-top:6px;padding:2px 10px;font-size:10px}
 .header-variant{
   display:inline-block;margin-top:8px;font-size:11px;font-weight:900;letter-spacing:.6px;
   background:var(--purple);color:#fff;border:2px solid var(--ink);border-radius:20px;
@@ -160,7 +176,6 @@ input[type=text],input[type=number]{
   font-size:16px;font-weight:800;font-family:inherit;outline:none;
   transition:border-color var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out);
 }
-input:hover{border-color:#9CAABB}
 input:focus{border-color:var(--orange);box-shadow:0 0 0 3px rgba(255,123,61,.2);background:var(--white)}
 input::placeholder{color:var(--muted);font-weight:700}
 .row{display:flex;gap:10px;align-items:center}
@@ -177,25 +192,35 @@ button{
   transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),filter var(--dur-fast) var(--ease-out);
   box-shadow:3px 3px 0 var(--ink);
 }
-button:hover{filter:brightness(1.06)}
 button:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
 button:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
 button[disabled]{opacity:.45;cursor:not-allowed;filter:grayscale(.4)}
 button[disabled]:active{transform:none;box-shadow:3px 3px 0 var(--ink)}
-.btn-primary{background:linear-gradient(135deg,var(--orange-dark),var(--orange));color:#fff}
+.btn-primary{background:linear-gradient(135deg,var(--orange-dark),var(--orange));color:var(--ink)}
 .btn-yellow{background:linear-gradient(135deg,var(--yellow-dark),var(--yellow));color:var(--ink)}
-.btn-green{background:linear-gradient(135deg,var(--green-dark),var(--green));color:#fff}
+.btn-green{background:linear-gradient(135deg,var(--green-dark),var(--green));color:var(--ink)}
 .btn-purple{background:linear-gradient(135deg,var(--purple-dark),var(--purple));color:#fff}
 .btn-ghost{background:var(--white);color:var(--ink);border-color:#C0CADC;box-shadow:2px 2px 0 #C0CADC}
 .btn-ghost:active{box-shadow:none}
 .btn-danger{background:linear-gradient(135deg,var(--red-dark),var(--red));color:#fff}
 .btn-icon{flex:0 0 auto;width:48px;height:48px;padding:0;display:flex;align-items:center;justify-content:center;font-size:20px}
-.btn-mini{padding:9px 12px;font-size:13px;flex:0 0 auto;min-height:40px}
-.btn-sm{font-size:13px;padding:10px 14px;min-height:40px}
+.btn-mini{padding:9px 12px;font-size:13px;flex:0 0 auto;min-height:44px}
+.btn-sm{font-size:13px;padding:10px 14px;min-height:44px}
+/* Le bouton carte est le cœur du produit : il méritait mieux qu'une
+   mini-commande de 40px. Cible pleine, pouce compris. */
+.btn-card{flex:0 0 auto;width:46px;height:46px;min-height:46px;padding:0;font-size:20px;line-height:1;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--yellow-dark),var(--yellow));color:var(--ink)}
 .btn-full{width:100%;padding:17px;font-size:18px;font-weight:900;letter-spacing:.3px;box-shadow:5px 5px 0 var(--ink)}
 .btn-full:active{box-shadow:2px 2px 0 var(--ink)}
 
-.pill{font-size:11px;font-weight:800;background:rgba(255,255,255,.25);color:#fff;border:1.5px solid rgba(255,255,255,.4);border-radius:20px;padding:3px 10px;white-space:nowrap}
+/* Ce style visait le fond turquoise et se retrouvait sur un .panel blanc :
+   blanc sur blanc, contraste 1:1, information illisible. Rattaché au
+   système d'ombres dures, il redevient lisible et cohérent. */
+.panel-head{display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.panel-head .panel-title{flex:1 1 auto;min-width:0}
+.panel-head .pill{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.pill{font-size:11px;font-weight:800;background:var(--teal-bg);color:var(--ink);border:2px solid var(--ink);border-radius:20px;padding:3px 10px;white-space:nowrap;box-shadow:2px 2px 0 var(--ink)}
 .hint{font-size:12px;font-weight:700;color:var(--muted);margin-top:8px}
 
 /* ═══════════════════════════════════════════
@@ -208,7 +233,7 @@ button[disabled]:active{transform:none;box-shadow:3px 3px 0 var(--ink)}
 }
 .seg button:active{transform:none;box-shadow:none}
 .seg button+button{border-left:3px solid var(--ink)}
-.seg button[aria-pressed="true"]{background:linear-gradient(135deg,var(--orange-dark),var(--orange));color:#fff}
+.seg button[aria-pressed="true"]{background:linear-gradient(135deg,var(--orange-dark),var(--orange));color:var(--ink)}
 .seg button[aria-pressed="true"].veng{background:linear-gradient(135deg,var(--purple-dark),var(--purple))}
 .variant-desc{font-size:12px;font-weight:700;color:var(--muted);margin-top:10px;min-height:32px}
 
@@ -239,43 +264,56 @@ ul{list-style:none;margin:12px 0 0}
 /* ═══════════════════════════════════════════
    SCOREBOARD
    ═══════════════════════════════════════════ */
-.score-card{display:flex;align-items:center;gap:12px;background:var(--white);border:2px solid var(--border);border-radius:16px;padding:12px 14px;margin-bottom:10px;position:relative;overflow:hidden;transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out)}
-.score-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,80,76,.14)}
-.score-card.leader{border:3px solid var(--orange);background:linear-gradient(180deg,#FFF5EE,var(--white))}
-.score-card.winner{border:3px solid var(--green);background:linear-gradient(180deg,var(--green-bg),var(--white))}
-.sc-rank{font-family:'Fredoka One',ui-rounded,cursive;font-size:22px;width:28px;text-align:center;color:var(--muted);flex:0 0 auto}
-.sc-rank.r1{color:var(--orange)}
+/* Rangées, plus cartes. Une carte dans une carte double l'encadrement,
+   coûte ~16px par joueur et repoussait « Valider la manche » hors écran.
+   Le filet et l'espace suffisent à séparer ; le cadre du .panel porte
+   déjà le groupe. */
+.score-card{display:flex;align-items:center;gap:12px;background:transparent;border:0;border-bottom:1px solid var(--border);border-radius:0;padding:10px 2px;margin:0;position:relative;transition:background var(--dur-fast) var(--ease-out)}
+.score-card:last-child{border-bottom:0}
+/* Teinte de fond, pas de cadre : un cadre ici recréerait l'imbrication.
+   Le débord négatif rattrape le padding du .panel pour que la teinte
+   aille d'un bord à l'autre. */
+.score-card.leader,.score-card.winner{margin:0 -16px;padding-left:18px;padding-right:18px;border-radius:10px}
+.score-card.leader{background:#FFF3E8}
+.score-card.winner{background:var(--green-bg)}
+.sc-rank{font-family:'Fredoka One',ui-rounded,cursive;font-size:22px;width:26px;text-align:center;color:var(--muted);flex:0 0 auto}
+/* 24px fait passer le chiffre en « grand texte » (seuil 3:1), ce que
+   l'orange clair ne tenait pas à 22px. */
+.sc-rank.r1{color:var(--orange-dark);font-size:24px}
 .sc-av{width:40px;height:40px;border-radius:12px;border:2px solid var(--ink);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:'Fredoka One',ui-rounded,cursive;font-size:19px}
 .sc-body{flex:1;min-width:0}
 /* Enfant direct uniquement : le <b> du sous-titre doit rester en ligne. */
 .sc-body>b{display:block;font-size:17px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
 .sc-body .sub{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-top:2px;line-height:1.25}
 .progress{height:6px;border-radius:6px;background:#EDF0F4;margin-top:6px;overflow:hidden}
-.progress>i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--orange),var(--yellow));transition:width var(--dur-slow) var(--ease-out)}
-.sc-total{font-family:'Fredoka One',ui-rounded,cursive;font-size:36px;min-width:56px;text-align:right;line-height:1;flex:0 0 auto}
+.progress>i{display:block;height:100%;width:100%;border-radius:6px;transform-origin:left center;background:linear-gradient(90deg,var(--orange),var(--yellow));transition:transform var(--dur-slow) var(--ease-out)}
+.sc-total{font-family:'Fredoka One',ui-rounded,cursive;font-size:44px;min-width:62px;text-align:right;line-height:1;flex:0 0 auto}
 .sc-total.neg{color:var(--red)}
 .sc-crown{position:absolute;top:8px;right:10px;font-size:17px}
 
 /* ═══════════════════════════════════════════
    ROUND ENTRY
    ═══════════════════════════════════════════ */
-.round-badge{display:inline-block;background:linear-gradient(135deg,var(--teal-dark),var(--teal-bg));border:2px solid var(--ink);border-radius:10px;padding:1px 12px;font-family:'Fredoka One',ui-rounded,cursive;font-size:22px;color:#fff;box-shadow:2px 2px 0 var(--ink)}
-.round-row{display:flex;align-items:center;gap:6px;background:var(--cream);border:2px solid var(--border);border-radius:12px;padding:8px;margin-bottom:8px;transition:border-color var(--dur-fast) var(--ease-out)}
-.round-row:focus-within{border-color:var(--orange)}
+.round-badge{display:inline-block;background:linear-gradient(135deg,var(--teal-dark),var(--teal-bg));border:2px solid var(--ink);border-radius:10px;padding:1px 12px;font-family:'Fredoka One',ui-rounded,cursive;font-size:22px;color:var(--ink);box-shadow:2px 2px 0 var(--ink)}
+.round-row{display:flex;align-items:center;gap:8px;background:transparent;border:0;border-bottom:1px solid var(--border);border-radius:0;padding:7px 2px;margin:0;transition:background var(--dur-fast) var(--ease-out)}
+.round-row:last-child{border-bottom:0}
+.round-row:focus-within{background:#FFF3E8}
 .round-row .nm{flex:1;font-weight:800;font-size:15px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .round-row input{flex:0 0 68px;text-align:center;font-weight:900;font-size:17px;font-family:'Fredoka One',ui-rounded,cursive;border:2px solid var(--ink);border-radius:10px;padding:7px 2px;background:var(--white)}
-.sign-btn{flex:0 0 auto;width:36px;padding:0;font-size:17px;font-weight:900;min-height:40px;background:var(--white);color:var(--ink);border-color:#C0CADC;box-shadow:2px 2px 0 #C0CADC}
+.sign-btn{flex:0 0 auto;width:44px;padding:0;font-size:17px;font-weight:900;min-height:44px;background:var(--white);color:var(--ink);border-color:#C0CADC;box-shadow:2px 2px 0 #C0CADC}
 .sign-btn:active{box-shadow:none}
 .gift-tag{display:block;font-size:11px;font-weight:800;color:var(--purple);margin-top:2px}
-.toolbar{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.toolbar button{flex:1;min-width:120px}
+.toolbar{display:flex;gap:8px;margin-top:14px}
+.toolbar button{white-space:nowrap}
+.toolbar button:first-child{flex:2}
+.toolbar button:last-child{flex:1}
 .footer-row{display:flex;gap:10px;flex-wrap:wrap}
 .footer-row button{flex:1;min-width:130px}
 
 /* ═══════════════════════════════════════════
    HISTORY
    ═══════════════════════════════════════════ */
-details{background:var(--cream);border:2px solid var(--border);border-radius:12px;padding:0 14px}
+details{background:transparent;border:0;border-top:1px solid var(--border);border-radius:0;padding:0}
 details summary{cursor:pointer;padding:11px 0;font-weight:800;font-size:14px;list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
 details summary::-webkit-details-marker{display:none}
 .summary-arrow{font-size:10px;color:var(--muted);transition:transform var(--dur-fast) var(--ease-out);display:inline-block}
@@ -328,7 +366,6 @@ details[open] .summary-arrow{transform:rotate(90deg)}
   transition:transform var(--dur-fast) var(--ease-out),box-shadow var(--dur-fast) var(--ease-out),background var(--dur-fast) var(--ease-out),border-color var(--dur-fast) var(--ease-out),color var(--dur-fast) var(--ease-out);
   box-shadow:2px 2px 0 #C0CADC;
 }
-.chip:hover{transform:translateY(-2px);box-shadow:3px 4px 0 #A8B4C8}
 .chip:active{transform:translate(1px,1px);box-shadow:none}
 .chip:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
 .chip.on{background:linear-gradient(135deg,var(--orange-dark),var(--orange));border-color:var(--ink);box-shadow:2px 2px 0 var(--ink);color:#fff}
@@ -392,7 +429,7 @@ details[open] .summary-arrow{transform:rotate(90deg)}
 .calc-total{font-family:'Fredoka One',ui-rounded,cursive;font-size:48px;color:var(--yellow);line-height:1;text-shadow:0 3px 14px rgba(0,0,0,.45)}
 .calc-total.neg{color:#FF8A7A}
 
-.flip7-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--red-dark),var(--orange));border:2px solid var(--ink);border-radius:20px;color:#fff;font-weight:900;font-size:13px;padding:5px 14px;margin-top:10px;box-shadow:2px 2px 0 var(--ink);animation:popIn var(--dur-normal) var(--ease-out)}
+.flip7-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--orange),var(--yellow));border:2px solid var(--ink);border-radius:20px;color:var(--ink);font-weight:900;font-size:13px;padding:5px 14px;margin-top:10px;box-shadow:2px 2px 0 var(--ink);animation:popIn var(--dur-normal) var(--ease-out)}
 @keyframes popIn{from{transform:scale(.9) translateY(8px);opacity:0}to{transform:none;opacity:1}}
 
 /* Don du Flip 7 */
@@ -440,9 +477,9 @@ details[open] .summary-arrow{transform:rotate(90deg)}
 .victory-actions{display:flex;flex-direction:column;gap:9px}
 
 /* Bandeaux */
-.winbanner{background:linear-gradient(135deg,var(--green-dark),var(--green));border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--ink);padding:14px 16px;margin-bottom:18px;font-size:15px;font-weight:900;color:#fff;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.winbanner{background:linear-gradient(135deg,var(--green-dark),var(--green));border:3px solid var(--ink);border-radius:20px;box-shadow:5px 5px 0 var(--ink);padding:14px 16px;margin-bottom:18px;font-size:15px;font-weight:900;color:var(--ink);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .winbanner .wb-text{flex:1;min-width:140px}
-.winbanner button{flex:0 0 auto;font-size:13px;padding:8px 14px;min-height:38px;border-color:rgba(0,0,0,.25);box-shadow:2px 2px 0 rgba(0,0,0,.25)}
+.winbanner button{flex:0 0 auto;font-size:13px;padding:8px 14px;min-height:44px;border-color:rgba(0,0,0,.25);box-shadow:2px 2px 0 rgba(0,0,0,.25)}
 .tiebanner{background:linear-gradient(135deg,var(--yellow-dark),var(--yellow));color:var(--ink)}
 
 /* Feuille de confirmation maison (remplace confirm()) */
@@ -482,7 +519,7 @@ details[open] .summary-arrow{transform:rotate(90deg)}
   body{padding:calc(24px + var(--sat)) calc(20px + var(--sar)) calc(56px + var(--sab)) calc(20px + var(--sal))}
   .panel{padding:22px 20px}
   .modal{padding:22px 22px calc(36px + var(--sab))}
-  .sc-total{font-size:42px}
+  .sc-total{font-size:50px}
   .grid-num{grid-template-columns:repeat(auto-fill,minmax(58px,1fr))}
   .grid-special{grid-template-columns:1fr 1fr}
   .round-row input{flex:0 0 84px}
@@ -498,13 +535,35 @@ details[open] .summary-arrow{transform:rotate(90deg)}
 @media (max-width:360px){
   .logo-flip{font-size:28px}.logo-7{font-size:50px}
   .calc-total{font-size:40px}
-  .sc-total{font-size:29px;min-width:46px}
+  .sc-total{font-size:36px;min-width:50px}
   .victory-winner{font-size:29px}.victory-crown{font-size:50px}
   .round-row{gap:5px;padding:7px 6px}
+  /* Sous 360px, « nowrap » sur l'action principale faisait déborder la
+     page horizontalement : on laisse le texte se replier. */
+  .toolbar{flex-wrap:wrap}
+  .toolbar button{white-space:normal}
+  .toolbar button:first-child{flex:1 1 100%}
+  .toolbar button:last-child{flex:1 1 100%}
   .round-row input{flex:0 0 58px;font-size:16px}
-  .sign-btn{width:32px}
+  .sign-btn{width:40px}
   .grid-num{grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
 }
+
+/* Produit exclusivement tactile : sans ce garde, un tap laisse l'élément
+   bloqué en état de survol jusqu'au tap suivant. */
+@media (hover:hover) and (pointer:fine){
+  .logo-box:hover{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--ink)}
+  input:hover{border-color:#9CAABB}
+  button:hover{filter:brightness(1.06)}
+  .chip:hover{transform:translateY(-2px);box-shadow:3px 4px 0 #A8B4C8}
+}
+
+/* Sortie des feuilles : 140ms, plus court que les 200ms d'entrée. */
+.overlay.closing{animation:fadeOut 140ms var(--ease-out) forwards}
+.overlay.closing .modal{animation:slideDown 140ms var(--ease-out) forwards}
+.victory-overlay.closing{animation:fadeOut 140ms var(--ease-out) forwards}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes slideDown{to{transform:translateY(14px);opacity:0}}
 
 .hidden{display:none!important}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
@@ -568,8 +627,8 @@ details[open] .summary-arrow{transform:rotate(90deg)}
     <div id="winBanner" class="winbanner hidden" role="status" aria-live="polite"></div>
 
     <div class="panel">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-        <div class="panel-title" style="margin:0;flex:1"><span class="panel-icon">🏆</span>Classement</div>
+      <div class="panel-head">
+        <div class="panel-title" style="margin:0"><span class="panel-icon">🏆</span>Classement</div>
         <span class="pill" id="roundInfo" aria-live="polite"></span>
       </div>
       <div id="scoreboard" role="list"></div>
@@ -621,7 +680,7 @@ details[open] .summary-arrow{transform:rotate(90deg)}
 
 <!-- ══════════════ CALCULATEUR ══════════════ -->
 <div class="overlay" id="calcOverlay" role="dialog" aria-modal="true" aria-labelledby="calcModalTitle">
-  <div class="modal">
+  <div class="modal" tabindex="-1">
     <div class="modal-handle"></div>
     <div class="modal-title" id="calcModalTitle">🃏 Manche de <span class="who" id="calcWho"></span></div>
     <p class="hint" style="margin-bottom:10px">Sélectionne les cartes retournées.</p>
@@ -706,7 +765,10 @@ const DEFAULT_STATE = () => ({
   target: 200,
   started: false,
   players: [],
-  rounds: []
+  rounds: [],
+  // Manche en cours de saisie, non encore validée. Persistée pour survivre
+  // à un rechargement en pleine partie.
+  draft: {}
 });
 
 let state = DEFAULT_STATE();
@@ -766,6 +828,17 @@ function normalize(raw) {
     }
     return { id: (r && r.id) || uid(), entries };
   });
+  // Brouillon de la manche en cours : on écarte les joueurs disparus et
+  // toute valeur qui n'est pas une chaîne, pour rester tolérant aux
+  // états écrits par une version antérieure.
+  const d = (raw.draft && typeof raw.draft === "object") ? raw.draft : {};
+  for (const [pid, e] of Object.entries(d)) {
+    if (!known.has(pid) || !e || typeof e !== "object") continue;
+    s.draft[pid] = {
+      cards: e.cards ? normalizeSelection(e.cards) : null,
+      typed: typeof e.typed === "string" ? e.typed : ""
+    };
+  }
   return s;
 }
 
@@ -993,7 +1066,15 @@ function closeConfirm(result) {
 /* Gestion des feuilles : verrou de défilement + bouton retour Android.
    Sans pushState, le retour système quitte l'app au lieu de fermer la feuille. */
 const sheetStack = [];
+// Une fermeture en cours doit être annulée si la feuille rouvre avant la
+// fin de l'animation, sinon son minuteur retire « open » à la feuille
+// fraîchement ouverte.
+const closeTimers = {};
+
 function openSheet(id) {
+  clearTimeout(closeTimers[id]);
+  delete closeTimers[id];
+  $(id).classList.remove("closing");
   $(id).classList.add("open");
   if (!sheetStack.length) lockScroll();
   sheetStack.push(id);
@@ -1002,7 +1083,17 @@ function openSheet(id) {
 function closeSheet(id, fromPop) {
   const el = $(id);
   if (!el.classList.contains("open")) return;
-  el.classList.remove("open");
+  // Sortie plus courte que l'entrée : l'utilisateur a décidé, le système
+  // exécute. Un aller-retour symétrique donne l'impression de traîner.
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced) { el.classList.remove("open"); }
+  else {
+    el.classList.add("closing");
+    closeTimers[id] = setTimeout(() => {
+      el.classList.remove("open", "closing");
+      delete closeTimers[id];
+    }, 140);
+  }
   const i = sheetStack.lastIndexOf(id);
   if (i >= 0) sheetStack.splice(i, 1);
   if (!sheetStack.length) unlockScroll();
@@ -1107,6 +1198,11 @@ async function removePlayer(id) {
       if (e.cards && e.cards.flip7Gift === id) e.cards.flip7Gift = null;
     });
   });
+  // Même purge sur la manche en cours de saisie.
+  delete state.draft[id];
+  Object.values(state.draft).forEach(d => {
+    if (d.cards && d.cards.flip7Gift === id) d.cards.flip7Gift = null;
+  });
   save(); renderPlayerList();
   if (state.started) renderGame();
 }
@@ -1126,6 +1222,7 @@ function backToSetup() {
   renderPlayerList(); renderVariant();
   $("game").classList.add("hidden");
   $("setup").classList.remove("hidden");
+  document.body.classList.remove("playing");
   window.scrollTo(0, 0);
 }
 
@@ -1143,6 +1240,7 @@ async function resetAll() {
   renderPlayerList(); renderVariant();
   $("game").classList.add("hidden");
   $("setup").classList.remove("hidden");
+  document.body.classList.remove("playing");
   closeVictory();
   window.scrollTo(0, 0);
 }
@@ -1150,6 +1248,7 @@ async function resetAll() {
 function replayWithSamePlayers() {
   // On garde joueurs, objectif ET variante : c'est la même tablée.
   state.rounds = [];
+  state.draft = {};
   save();
   closeVictory();
   renderGame();
@@ -1163,6 +1262,7 @@ function replayWithSamePlayers() {
 function showGame() {
   $("setup").classList.add("hidden");
   $("game").classList.remove("hidden");
+  document.body.classList.add("playing");
   renderGame();
   window.scrollTo(0, 0);
 }
@@ -1223,7 +1323,7 @@ function renderGame() {
       <div class="sc-av ${avc(oi)}"></div>
       <div class="sc-body">
         <b></b><span class="sub">${sub}</span>
-        <div class="progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="width:${pct}%"></i></div>
+        <div class="progress" role="progressbar" aria-label="Progression vers l'objectif" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><i style="transform:scaleX(${pct/100})"></i></div>
       </div>
       <div class="sc-total${total < 0 ? " neg" : ""}">${total}</div>
       ${hasWon ? '<span class="sc-crown">👑</span>' : ""}`;
@@ -1236,44 +1336,72 @@ function renderGame() {
   renderHistory(t);
 }
 
-/* Saisie d'une manche. `draft` conserve les sélections de cartes
-   en cours avant validation. */
-let draft = {};
+/* Saisie d'une manche en cours.
+   `state.draft[pid] = { cards, typed }` est la SOURCE UNIQUE de vérité :
+   `cards` est la sélection du calculateur, `typed` la chaîne affichée.
+   Le DOM n'est qu'un reflet. Avant, les champs étaient la seule mémoire,
+   et chaque reconstruction de la liste les effaçait — ouvrir le
+   calculateur pour un joueur vidait les scores tapés pour les autres.
+   Persister le brouillon protège aussi contre un rechargement en
+   pleine manche (onglet déchargé par iOS, écran verrouillé). */
+const draftOf = pid => (state.draft[pid] ||= { cards: null, typed: "" });
+
+let draftSaveTimer = null;
+function saveDraftSoon() {
+  clearTimeout(draftSaveTimer);
+  draftSaveTimer = setTimeout(save, 300);
+}
 
 function renderRoundEntry() {
   const box = $("roundEntry");
   box.innerHTML = "";
   state.players.forEach((p, i) => {
+    const d = state.draft[p.id] || { cards: null, typed: "" };
+    const gift = d.cards && d.cards.flip7Gift;
+    const giftName = gift ? (state.players.find(x => x.id === gift) || {}).name : null;
     const row = document.createElement("div");
     row.className = "round-row";
-    const gift = draft[p.id] && draft[p.id].flip7Gift;
-    const giftName = gift ? (state.players.find(x => x.id === gift) || {}).name : null;
     row.innerHTML = `
       <div class="av ${avc(i)}" style="width:28px;height:28px;border-radius:8px;font-size:13px;flex:0 0 auto"></div>
       <div class="nm"><span class="nm-txt"></span>${giftName ? `<span class="gift-tag">🎁 −15 à ${esc(giftName)}</span>` : ""}</div>
       ${state.merciless ? `<button class="sign-btn" data-sign="${p.id}" aria-label="Inverser le signe du score de ${esc(p.name)}">±</button>` : ""}
-      <button class="btn-yellow btn-mini" data-calc="${p.id}" aria-label="Compter les cartes de ${esc(p.name)}" style="font-size:16px;padding:7px 10px">🃏</button>
-      <input type="text" inputmode="numeric" pattern="-?[0-9]*" autocomplete="off" enterkeyhint="done"
+      <button class="btn-card" data-calc="${p.id}" aria-label="Compter les cartes de ${esc(p.name)}">🃏</button>
+      <input type="text" inputmode="numeric" pattern="-?[0-9]*" autocomplete="off"
+             enterkeyhint="${i === state.players.length - 1 ? "done" : "next"}"
              placeholder="0" id="in_${p.id}" aria-label="Points de ${esc(p.name)}">`;
     row.querySelector(".av").textContent = ini(p.name);
     row.querySelector(".nm-txt").textContent = p.name;
+    const input = row.querySelector("input");
+    input.value = d.typed;
+    input.oninput = () => { draftOf(p.id).typed = input.value; saveDraftSoon(); };
+    // Entrée passe au joueur suivant, et valide la manche sur le dernier.
+    input.onkeydown = e => {
+      if (e.key !== "Enter") return;
+      e.preventDefault();
+      const next = state.players[i + 1];
+      if (next) $("in_" + next.id).focus();
+      else { input.blur(); validateRound(); }
+    };
     box.appendChild(row);
   });
   box.querySelectorAll("[data-calc]").forEach(b => b.onclick = () => openCalc(b.dataset.calc));
   box.querySelectorAll("[data-sign]").forEach(b => b.onclick = () => {
-    const el = $("in_" + b.dataset.sign);
+    const pid = b.dataset.sign;
+    const el = $("in_" + pid);
     const raw = el.value.trim();
     // Champ vide : on amorce le signe pour que l'utilisateur tape ses chiffres.
     if (raw === "") el.value = "-";
     else if (raw === "-") el.value = "";
     else if (/^-?\d+$/.test(raw)) el.value = String(-parseInt(raw, 10));
+    draftOf(pid).typed = el.value;
+    saveDraftSoon();
     el.focus();
   });
 }
 
 function clearRoundInputs() {
-  draft = {};
-  state.players.forEach(p => { const el = $("in_" + p.id); if (el) el.value = ""; });
+  state.draft = {};
+  save();
   renderRoundEntry();
 }
 
@@ -1293,7 +1421,7 @@ async function validateRound() {
       v = parseInt(rawVal, 10);
       any = true;
     }
-    const cards = draft[p.id] || null;
+    const cards = (state.draft[p.id] && state.draft[p.id].cards) || null;
     entries[p.id] = { cards, score: v, manual: !cards };
   }
 
@@ -1312,9 +1440,8 @@ async function validateRound() {
   }
 
   state.rounds.push({ id: uid(), entries });
-  draft = {};
+  state.draft = {};
   save();
-  clearRoundInputs();
   renderGame();
 
   const res = winners(totals());
@@ -1391,7 +1518,8 @@ function cycleNumber(n) {
 function openCalc(pid) {
   const p = state.players.find(x => x.id === pid);
   if (!p) return;
-  calc = { playerId: pid, sel: draft[pid] ? normalizeSelection(draft[pid]) : newSelection() };
+  const prev = state.draft[pid] && state.draft[pid].cards;
+  calc = { playerId: pid, sel: prev ? normalizeSelection(prev) : newSelection() };
   $("calcWho").textContent = p.name;
 
   const veng = state.variant === "vengeance";
@@ -1406,7 +1534,8 @@ function openCalc(pid) {
   $("bustBtn").classList.toggle("on", calc.sel.bust);
   refresh();
   openSheet("calcOverlay");
-  setTimeout(() => $("bustBtn").focus(), 60);
+  // Pas sur #bustBtn : une Entrée réflexe ferait sauter le joueur.
+  setTimeout(() => $("calcOverlay").querySelector(".modal").focus(), 60);
 }
 
 function buildNumbers(veng) {
@@ -1637,18 +1766,14 @@ function refresh() {
 
 function applyCalc() {
   const r = computeScore(calc.sel, state.variant, state.merciless);
-  const el = $("in_" + calc.playerId);
-  if (el) el.value = String(r.total);
-  draft[calc.playerId] = normalizeSelection(calc.sel);
+  // On n'écrit que le brouillon de CE joueur : les autres gardent ce qui
+  // a été tapé, et renderRoundEntry repeuple tout depuis le brouillon.
+  const d = draftOf(calc.playerId);
+  d.cards = normalizeSelection(calc.sel);
+  d.typed = String(r.total);
+  save();
   closeCalc();
   renderRoundEntry();
-  // renderRoundEntry a reconstruit les inputs : on réinjecte les valeurs saisies.
-  state.players.forEach(p => {
-    if (draft[p.id]) {
-      const e = $("in_" + p.id);
-      if (e) e.value = String(computeScore(draft[p.id], state.variant, state.merciless).total);
-    }
-  });
 }
 
 function closeCalc(fromPop) { closeSheet("calcOverlay", fromPop); }

@@ -84,12 +84,46 @@ check('CSS overscroll-behavior', css.includes('overscroll-behavior'), true);
 check('CSS -webkit-backdrop-filter', css.includes('-webkit-backdrop-filter'), true);
 check('CSS prefers-reduced-motion', css.includes('prefers-reduced-motion'), true);
 
-/* Le corps de page ne déborde pas horizontalement */
+/* Le corps de page ne déborde pas horizontalement.
+   On teste les DEUX écrans : ne vérifier que la configuration avait laissé
+   passer un débordement de la pastille d'objectif sur l'écran de jeu. */
+const deborde = () => page.evaluate(() => {
+  const W = document.documentElement.clientWidth;
+  if (document.documentElement.scrollWidth <= W + 1) return null;
+  const c = [...document.querySelectorAll('*')].find(el => el.getBoundingClientRect().right > W + 1);
+  return c ? (c.id ? '#' + c.id : '.' + String(c.className).trim().split(/\s+/)[0]) : 'inconnu';
+});
+
 for (const w of [320, 360, 390, 430, 768, 1024]) {
   await page.setViewportSize({ width: w, height: 800 });
-  const over = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1);
-  check(`pas de débordement horizontal à ${w}px`, over, false);
+  check(`configuration · pas de débordement à ${w}px`, await deborde(), null);
 }
+
+// Même contrôle une fois en partie, où la mise en page est la plus dense.
+await page.setViewportSize({ width: 390, height: 844 });
+await page.evaluate(() => localStorage.clear());
+await page.reload({ waitUntil: 'domcontentloaded' });
+for (const n of ['Antoine', 'Sophie', 'Marc']) {
+  await page.fill('#playerName', n);
+  await page.click('#addPlayerBtn');
+}
+await page.fill('#targetScore', '60');
+await page.click('#startBtn');
+for (const w of [320, 360, 390, 430, 768, 1024]) {
+  await page.setViewportSize({ width: w, height: 800 });
+  check(`partie · pas de débordement à ${w}px`, await deborde(), null);
+}
+
+// L'action principale doit rester atteignable sans défiler sur un écran courant.
+await page.setViewportSize({ width: 390, height: 844 });
+const valider = await page.evaluate(() => {
+  const b = document.getElementById('validateBtn').getBoundingClientRect();
+  return { bas: Math.round(b.bottom + scrollY), ecran: innerHeight };
+});
+check('« Valider » au-dessus de la ligne de flottaison (390×844)', valider.bas <= valider.ecran, true);
+
+await page.evaluate(() => localStorage.clear());
+await page.reload({ waitUntil: 'load' });
 await page.setViewportSize({ width: 390, height: 844 });
 
 /* ── Service worker ── */

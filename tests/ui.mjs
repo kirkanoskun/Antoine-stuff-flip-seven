@@ -217,6 +217,47 @@ await goto();
 check('K1 · JSON corrompu → état par défaut', await page.evaluate(() => state.players.length), 0);
 check('K2 · app fonctionnelle après corruption', await page.locator('#setup').isVisible(), true);
 
+/* ══════════ L. Brouillon de manche ══════════
+   Le calculateur reconstruisait toute la liste de saisie, ce qui vidait
+   les champs des autres joueurs et écrasait les corrections manuelles.
+   Ces cas gardent le parcours mixte saisie + calculateur sous surveillance. */
+await page.evaluate(() => localStorage.clear());
+await goto();
+await addPlayers(['Alice', 'Bob', 'Chloe', 'David']);
+await page.fill('#targetScore', '200');
+await page.click('#startBtn');
+P = await ids();
+const champs = () => page.evaluate(i => i.map(x => document.getElementById('in_' + x).value), P);
+
+await page.fill(`#in_${P[0]}`, '18');
+await page.fill(`#in_${P[1]}`, '22');
+await page.fill(`#in_${P[2]}`, '7');
+await page.evaluate(x => openCalc(x), P[3]);
+await page.evaluate(() => { calc.sel.numbers = [5, 9]; refresh(); });
+await page.click('#applyCalcBtn');
+await page.waitForTimeout(150);
+check('L1 · saisies manuelles conservées après le calculateur', await champs(), ['18', '22', '7', '14']);
+
+await page.fill(`#in_${P[0]}`, '25');
+await page.evaluate(x => openCalc(x), P[1]);
+await page.evaluate(() => { calc.sel.numbers = [3]; refresh(); });
+await page.click('#applyCalcBtn');
+await page.waitForTimeout(150);
+check('L2 · correction manuelle non écrasée', (await champs())[0], '25');
+
+await page.reload({ waitUntil: 'domcontentloaded' });
+await page.waitForTimeout(200);
+check('L3 · brouillon restauré après rechargement', await champs(), ['25', '3', '7', '14']);
+
+await page.click('#validateBtn');
+await page.waitForTimeout(200);
+check('L4 · brouillon vidé après validation', await champs(), ['', '', '', '']);
+check('L5 · manche enregistrée avec les bons scores', await tot(), [25, 3, 7, 14]);
+
+await page.fill(`#in_${P[0]}`, '9');
+await page.click('#clearBtn');
+check('L6 · « Effacer » vide le brouillon', await page.evaluate(() => Object.keys(state.draft).length), 0);
+
 check('Z · aucune exception JS', jsErrors, []);
 
 await browser.close();
