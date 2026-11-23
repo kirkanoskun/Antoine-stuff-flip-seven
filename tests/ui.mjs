@@ -258,6 +258,106 @@ await page.fill(`#in_${P[0]}`, '9');
 await page.click('#clearBtn');
 check('L6 · « Effacer » vide le brouillon', await page.evaluate(() => Object.keys(state.draft).length), 0);
 
+/* ══════════ M. Corriger une manche passée ══════════ */
+await page.evaluate(() => localStorage.clear());
+await goto();
+await addPlayers(['Alice', 'Bob']);
+await page.fill('#targetScore', '500');
+await page.click('#startBtn');
+P = await ids();
+// Trois manches, dont une saisie aux cartes pour Alice en manche 1.
+await page.evaluate(x => openCalc(x), P[0]);
+await page.evaluate(() => { calc.sel.numbers = [4, 6]; refresh(); });
+await page.click('#applyCalcBtn');
+await page.fill(`#in_${P[1]}`, '5');
+await page.click('#validateBtn'); await page.waitForTimeout(150);
+for (const [a, b] of [['10', '10'], ['20', '20']]) {
+  await page.fill(`#in_${P[0]}`, a); await page.fill(`#in_${P[1]}`, b);
+  await page.click('#validateBtn'); await page.waitForTimeout(150);
+}
+check('M1 · trois manches enregistrées', await page.evaluate(() => state.rounds.length), 3);
+check('M2 · totaux de départ', await tot(), [40, 35]);
+
+// Corriger la manche 1 d'Alice (la plus ancienne) sans toucher aux autres.
+await page.click('.edit-cell[data-round="0"][data-player="' + P[0] + '"]');
+check('M3 · feuille de correction ouverte', await page.locator('#editOverlay').isVisible(), true);
+check('M4 · score courant préchargé', await page.inputValue('#editScore'), '10');
+check('M5 · cartes enregistrées rappelées', (await page.locator('#editCardsNote').textContent()).includes('4 + 6'), true);
+await page.fill('#editScore', '30');
+await page.click('#editSaveBtn'); await page.waitForTimeout(200);
+check('M6 · correction appliquée', await tot(), [60, 35]);
+check('M7 · nombre de manches inchangé', await page.evaluate(() => state.rounds.length), 3);
+
+// Recompter depuis les cartes pendant la correction.
+await page.click('.edit-cell[data-round="0"][data-player="' + P[0] + '"]');
+await page.click('#editCardsBtn');
+check('M8 · calculateur empilé sur la correction', await page.locator('#calcOverlay').isVisible(), true);
+await page.evaluate(() => { calc.sel.numbers = [1, 2, 3]; refresh(); });
+await page.click('#applyCalcBtn'); await page.waitForTimeout(200);
+check('M9 · feuille de correction toujours ouverte', await page.locator('#editOverlay').isVisible(), true);
+check('M10 · score recalculé reporté', await page.inputValue('#editScore'), '6');
+await page.click('#editSaveBtn'); await page.waitForTimeout(200);
+check('M11 · recalcul enregistré', await tot(), [36, 35]);
+
+// Une correction illisible ne doit rien écrire.
+await page.click('.edit-cell[data-round="1"][data-player="' + P[1] + '"]');
+await page.fill('#editScore', '12abc');
+await page.click('#editSaveBtn'); await page.waitForTimeout(150);
+check('M12 · saisie illisible refusée', await tot(), [36, 35]);
+await page.click('#editCancelBtn'); await page.waitForTimeout(200);
+
+/* ══════════ N. Rétablir une manche annulée ══════════ */
+const avant = await tot();
+await page.click('#undoBtn');
+await confirmYes();
+check('N1 · manche retirée', await page.evaluate(() => state.rounds.length), 2);
+check('N2 · bouton Rétablir proposé', await page.locator('#toast button').isVisible(), true);
+await page.click('#toast button'); await page.waitForTimeout(200);
+check('N3 · manche rétablie', await page.evaluate(() => state.rounds.length), 3);
+check('N4 · totaux identiques à avant', await tot(), avant);
+
+/* ══════════ O. Rappel des règles ══════════ */
+await page.click('#rulesBtnGame');
+check('O1 · feuille des règles ouverte', await page.locator('#rulesOverlay').isVisible(), true);
+let regles = await page.locator('#rulesBody').textContent();
+check('O2 · règles Standard : ×2 expliqué', regles.includes('×2'), true);
+check('O3 · bonus Flip 7 rappelé', regles.includes('+15'), true);
+check('O4 · objectif réel affiché', regles.includes('500'), true);
+check('O5 · pas de contenu Vengeance en Standard', regles.includes('Porte-bonheur'), false);
+await page.click('#rulesCloseBtn'); await page.waitForTimeout(200);
+
+// En Vengeance, le contenu doit changer.
+await page.evaluate(() => { state.rounds = []; state.variant = 'vengeance'; state.merciless = true; save(); renderGame(); });
+await page.click('#rulesBtnGame');
+regles = await page.locator('#rulesBody').textContent();
+check('O6 · règles Vengeance : Le Zéro', regles.includes('Le Zéro'), true);
+check('O7 · règles Vengeance : ÷2', regles.includes('÷2'), true);
+check('O8 · Sans Pitié mentionné', regles.includes('sous zéro'), true);
+check('O9 · pas de ×2 en Vengeance', regles.includes('×2'), false);
+await page.click('#rulesCloseBtn'); await page.waitForTimeout(200);
+check('O10 · feuille refermée', await page.locator('#rulesOverlay').isVisible(), false);
+
+/* ══════════ P. Empilement des feuilles ══════════
+   closeSheet appelle history.back(), dont le popstate fermait aussi la
+   feuille du dessous : confirmer le 7 Porte-malheur fermait le
+   calculateur, et appliquer un recalcul fermait la correction. */
+await page.evaluate(() => localStorage.clear());
+await goto();
+await addPlayers(['A', 'B']);
+await page.click('#segVengeance');
+await page.fill('#targetScore', '200');
+await page.click('#startBtn');
+P = await ids();
+await page.evaluate(x => openCalc(x), P[0]);
+await page.evaluate(() => { calc.sel.numbers = [3, 5, 9]; refresh(); });
+await page.click('#unluckyChip');
+check('P1 · confirmation empilée sur le calculateur', await page.locator('#confirmOverlay').isVisible(), true);
+await page.click('#confirmYes'); await page.waitForTimeout(250);
+check('P2 · le calculateur reste ouvert après confirmation', await page.locator('#calcOverlay').isVisible(), true);
+check('P3 · défausse appliquée', await page.evaluate(() => calc.sel.numbers), [7]);
+await page.click('#cancelCalcBtn'); await page.waitForTimeout(200);
+check('P4 · toutes les feuilles refermées', await page.evaluate(() => sheetStack.length), 0);
+
 check('Z · aucune exception JS', jsErrors, []);
 
 await browser.close();

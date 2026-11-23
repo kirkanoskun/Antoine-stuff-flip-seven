@@ -303,6 +303,33 @@ ul{list-style:none;margin:12px 0 0}
 .sign-btn{flex:0 0 auto;width:44px;padding:0;font-size:17px;font-weight:900;min-height:44px;background:var(--white);color:var(--ink);border-color:#C0CADC;box-shadow:2px 2px 0 #C0CADC}
 .sign-btn:active{box-shadow:none}
 .gift-tag{display:block;font-size:11px;font-weight:800;color:var(--purple);margin-top:2px}
+/* Correction d'une manche */
+.edit-row{display:flex;gap:10px;align-items:center}
+.edit-row input{flex:1;text-align:center;font-family:'Fredoka One',ui-rounded,cursive;font-size:26px;padding:10px}
+
+/* Cellule d'historique corrigeable */
+.htable td.edit-cell{cursor:pointer;border-radius:6px;transition:background var(--dur-fast) var(--ease-out)}
+.htable td.edit-cell:active{background:#FFF3E8}
+.htable td.edit-cell::after{content:"";display:inline-block;width:0}
+
+/* Règles */
+.rules-sec{margin-top:16px}
+.rules-sec h4{font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px}
+.rules-list{list-style:none;margin:0}
+.rules-list li{display:flex;gap:10px;align-items:baseline;padding:6px 0;border-bottom:1px solid #EDE5CC;font-size:14px;font-weight:700}
+.rules-list li:last-child{border-bottom:0}
+.rules-list .k{flex:0 0 auto;min-width:62px;font-weight:900;font-size:15px;color:var(--ink)}
+.rules-list .d{flex:1;font-weight:700;color:var(--muted)}
+.rules-flow{background:var(--cream);border:2px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-weight:800;line-height:1.7}
+.rules-flow em{font-style:normal;color:var(--orange-dark)}
+.rules-note{font-size:12px;font-weight:700;color:var(--muted);margin-top:8px}
+
+/* Action dans le bandeau éphémère */
+.toast{display:flex;align-items:center;justify-content:center;gap:12px}
+/* Le bandeau est transparent aux clics pour ne pas bloquer la page ;
+   seul son bouton redevient cliquable. */
+.toast button{pointer-events:auto;min-height:34px;padding:5px 12px;font-size:13px;box-shadow:2px 2px 0 rgba(0,0,0,.4);border-color:rgba(0,0,0,.4);flex:0 0 auto}
+
 .toolbar{display:flex;gap:8px;margin-top:14px}
 .toolbar button{white-space:nowrap}
 .toolbar button:first-child{flex:2}
@@ -606,6 +633,7 @@ details[open] .summary-arrow{transform:rotate(90deg)}
         </div>
         <button type="button" class="switch" id="mercilessSwitch" role="switch" aria-checked="false" aria-label="Activer le mode Sans Pitié"></button>
       </div>
+      <button class="btn-ghost btn-sm" id="rulesBtnSetup" style="width:100%;margin-top:12px">📖 Comment on compte les points</button>
       <div id="variantLocked" class="locked-note hidden">
         <span>🔒</span>
         <span>La variante est verrouillée pendant la partie — elle change le calcul des manches déjà notées. Lance une nouvelle partie pour en changer.</span>
@@ -655,7 +683,8 @@ details[open] .summary-arrow{transform:rotate(90deg)}
     </div>
 
     <div class="footer-row">
-      <button class="btn-ghost btn-sm" id="editPlayersBtn">⚙ Modifier joueurs</button>
+      <button class="btn-ghost btn-sm" id="rulesBtnGame">📖 Règles</button>
+      <button class="btn-ghost btn-sm" id="editPlayersBtn">⚙ Joueurs</button>
       <button class="btn-danger btn-sm" id="resetBtn">🗑 Nouvelle partie</button>
     </div>
   </section>
@@ -730,6 +759,37 @@ details[open] .summary-arrow{transform:rotate(90deg)}
     <div class="modal-actions">
       <button class="btn-ghost" id="cancelCalcBtn">Annuler</button>
       <button class="btn-green" style="flex:1.4" id="applyCalcBtn">Appliquer ce score →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ CORRIGER UNE MANCHE ══════════════ -->
+<div class="overlay" id="editOverlay" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+  <div class="modal" tabindex="-1">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="editTitle">✏️ Corriger</div>
+    <p class="hint" id="editHint" style="margin-bottom:12px"></p>
+    <div class="edit-row">
+      <input type="text" inputmode="numeric" pattern="-?[0-9]*" autocomplete="off"
+             id="editScore" aria-label="Score corrigé">
+      <button class="btn-card" id="editCardsBtn" aria-label="Recompter les cartes">🃏</button>
+    </div>
+    <p class="hint" id="editCardsNote"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="editCancelBtn">Annuler</button>
+      <button class="btn-green" id="editSaveBtn">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ RÈGLES ══════════════ -->
+<div class="overlay" id="rulesOverlay" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+  <div class="modal" tabindex="-1">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="rulesTitle">📖 Comment on compte</div>
+    <div id="rulesBody"></div>
+    <div class="modal-actions">
+      <button class="btn-green" id="rulesCloseBtn">J'ai compris</button>
     </div>
   </div>
 </div>
@@ -1021,12 +1081,24 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">
 const plural = (n, s, p) => n > 1 ? p : s;
 
 let toastTimer = null;
-function toast(msg) {
+/* Un bandeau peut porter une action : c'est ce qui rend une annulation
+   réversible sans ajouter d'écran. */
+function toast(msg, action) {
   const el = $("toast");
-  el.textContent = msg;
+  el.textContent = "";
+  const span = document.createElement("span");
+  span.textContent = msg;
+  el.appendChild(span);
+  if (action) {
+    const b = document.createElement("button");
+    b.className = "btn-yellow";
+    b.textContent = action.label;
+    b.onclick = () => { el.classList.remove("show"); clearTimeout(toastTimer); action.run(); };
+    el.appendChild(b);
+  }
   el.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
+  toastTimer = setTimeout(() => el.classList.remove("show"), action ? 6000 : 2600);
 }
 
 /* Verrou de défilement : on mémorise la position pour la restaurer,
@@ -1070,14 +1142,20 @@ const sheetStack = [];
 // fin de l'animation, sinon son minuteur retire « open » à la feuille
 // fraîchement ouverte.
 const closeTimers = {};
+let ignoreNextPop = false;
 
 function openSheet(id) {
   clearTimeout(closeTimers[id]);
   delete closeTimers[id];
-  $(id).classList.remove("closing");
-  $(id).classList.add("open");
+  const el = $(id);
+  el.classList.remove("closing");
+  el.classList.add("open");
   if (!sheetStack.length) lockScroll();
   sheetStack.push(id);
+  // L'empilement doit suivre l'ordre d'ouverture, pas l'ordre du DOM :
+  // à z-index égal, la feuille écrite plus bas dans le fichier recouvrait
+  // celle ouverte par-dessus elle.
+  el.style.zIndex = String(50 + sheetStack.length);
   history.pushState({ sheet: id }, "");
 }
 function closeSheet(id, fromPop) {
@@ -1096,14 +1174,23 @@ function closeSheet(id, fromPop) {
   }
   const i = sheetStack.lastIndexOf(id);
   if (i >= 0) sheetStack.splice(i, 1);
+  el.style.zIndex = "";
   if (!sheetStack.length) unlockScroll();
-  if (!fromPop && history.state && history.state.sheet === id) history.back();
+  // history.back() déclenche popstate, dont le gestionnaire fermerait la
+  // feuille du dessous : on lui signale que ce retour vient de nous.
+  if (!fromPop && history.state && history.state.sheet === id) {
+    ignoreNextPop = true;
+    history.back();
+  }
 }
 window.addEventListener("popstate", () => {
+  if (ignoreNextPop) { ignoreNextPop = false; return; }
   const top = sheetStack[sheetStack.length - 1];
   if (!top) return;
   if (top === "calcOverlay") closeCalc(true);
   else if (top === "confirmOverlay") closeConfirm(false);
+  else if (top === "editOverlay") closeSheet("editOverlay", true);
+  else if (top === "rulesOverlay") closeSheet("rulesOverlay", true);
   else if (top === "victoryOverlay") closeVictory(true);
 });
 
@@ -1459,10 +1546,21 @@ async function undoLastRound() {
     yes: "Annuler la manche"
   });
   if (!ok) return;
-  state.rounds.pop();
+  // On garde la manche retirée le temps du bandeau : une annulation ne
+  // doit pas être un aller sans retour.
+  const removed = state.rounds.pop();
+  const atIndex = state.rounds.length;
   save();
   renderGame();
-  toast("Manche annulée.");
+  toast("Manche annulée.", {
+    label: "↩ Rétablir",
+    run: () => {
+      state.rounds.splice(atIndex, 0, removed);
+      save();
+      renderGame();
+      toast("Manche rétablie.");
+    }
+  });
 }
 
 function renderHistory(t) {
@@ -1476,7 +1574,7 @@ function renderHistory(t) {
   h += "<th>Total</th></tr></thead><tbody>";
   state.players.forEach(p => {
     h += `<tr><td class="pname">${esc(p.name)}</td>`;
-    state.rounds.forEach(r => {
+    state.rounds.forEach((r, ri) => {
       const e = r.entries[p.id];
       const g = giftsAgainst(r, p.id);
       const v = roundScoreFor(r, p.id);
@@ -1484,12 +1582,21 @@ function renderHistory(t) {
       const isBust = !!(e && e.cards && e.cards.bust);
       const cls = isBust ? "bust" : g ? "gift" : v < 0 ? "neg" : "";
       const title = isBust ? "A sauté" : g ? `${g} Flip 7 reçu${g > 1 ? "s" : ""} en malus` : "";
-      h += `<td class="${cls}"${title ? ` title="${title}"` : ""}>${isBust ? "✗" : v}${g ? " 🎁" : ""}</td>`;
+      h += `<td class="${cls} edit-cell" data-round="${ri}" data-player="${p.id}" role="button" tabindex="0"`
+         + ` title="${title || `Corriger la manche ${ri + 1}`}"`
+         + ` aria-label="Manche ${ri + 1}, ${esc(p.name)}, ${isBust ? "a sauté" : v + " points"} — corriger">`
+         + `${isBust ? "✗" : v}${g ? " 🎁" : ""}</td>`;
     });
     h += `<td class="${t[p.id] < 0 ? "neg" : ""}"><b>${t[p.id]}</b></td></tr>`;
   });
   h += "</tbody></table></div></details>";
+  h += `<p class="rules-note">Touche une case pour corriger cette manche.</p>`;
   box.innerHTML = h;
+  box.querySelectorAll(".edit-cell").forEach(td => {
+    const go = () => openEdit(Number(td.dataset.round), td.dataset.player);
+    td.onclick = go;
+    td.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } };
+  });
 }
 
 /* ═══════════════════════════════════════════
@@ -1515,11 +1622,14 @@ function cycleNumber(n) {
   refresh();
 }
 
-function openCalc(pid) {
+function openCalc(pid, mode) {
   const p = state.players.find(x => x.id === pid);
   if (!p) return;
-  const prev = state.draft[pid] && state.draft[pid].cards;
-  calc = { playerId: pid, sel: prev ? normalizeSelection(prev) : newSelection() };
+  mode = mode === "edit" ? "edit" : "draft";
+  const prev = mode === "edit"
+    ? editing.cards
+    : (state.draft[pid] && state.draft[pid].cards);
+  calc = { playerId: pid, mode, sel: prev ? normalizeSelection(prev) : newSelection() };
   $("calcWho").textContent = p.name;
 
   const veng = state.variant === "vengeance";
@@ -1605,7 +1715,7 @@ function buildMalus() {
   const d = document.createElement("div");
   d.className = "chip div2"; d.tabIndex = 0; d.id = "div2Chip";
   d.setAttribute("role", "button");
-  d.textContent = "÷2";
+  d.innerHTML = '÷2<span class="sub-label">moitié</span>';
   const td = () => {
     const s = calc.sel;
     const n = s.malus.filter(x => x === DIV2).length;
@@ -1766,6 +1876,14 @@ function refresh() {
 
 function applyCalc() {
   const r = computeScore(calc.sel, state.variant, state.merciless);
+  if (calc.mode === "edit") {
+    // La feuille de correction reste ouverte dessous : on la met à jour.
+    editing.cards = normalizeSelection(calc.sel);
+    $("editScore").value = String(r.total);
+    renderEditNote();
+    closeCalc();
+    return;
+  }
   // On n'écrit que le brouillon de CE joueur : les autres gardent ce qui
   // a été tapé, et renderRoundEntry repeuple tout depuis le brouillon.
   const d = draftOf(calc.playerId);
@@ -1777,6 +1895,106 @@ function applyCalc() {
 }
 
 function closeCalc(fromPop) { closeSheet("calcOverlay", fromPop); }
+
+/* ═══════════════════════════════════════════
+   CORRIGER UNE MANCHE DÉJÀ VALIDÉE
+   ═══════════════════════════════════════════
+   La composition en cartes était déjà conservée par manche sans jamais
+   être consultable : on ne pouvait qu'annuler la dernière manche, donc
+   réparer la manche 2 d'une partie à 6 demandait six annulations. */
+let editing = { round: -1, playerId: null, cards: null };
+
+function openEdit(roundIndex, pid) {
+  const r = state.rounds[roundIndex];
+  const p = state.players.find(x => x.id === pid);
+  if (!r || !p) return;
+  const e = r.entries[pid] || { cards: null, score: 0, manual: true };
+  editing = { round: roundIndex, playerId: pid, cards: e.cards ? normalizeSelection(e.cards) : null };
+
+  $("editTitle").textContent = `✏️ Manche ${roundIndex + 1} — ${p.name}`;
+  const recu = giftsAgainst(r, pid);
+  $("editHint").textContent = recu
+    ? `Score propre du joueur. Les ${recu * 15} points de Flip 7 reçus en malus restent appliqués à part.`
+    : "Corrige le score à la main, ou recompte depuis les cartes.";
+  $("editScore").value = String(e.score);
+  renderEditNote();
+  openSheet("editOverlay");
+  setTimeout(() => $("editOverlay").querySelector(".modal").focus(), 60);
+}
+
+function renderEditNote() {
+  const n = $("editCardsNote");
+  if (!editing.cards) { n.textContent = "Score saisi à la main — aucune carte enregistrée."; return; }
+  const r = computeScore(editing.cards, state.variant, state.merciless);
+  const nums = editing.cards.numbers;
+  n.textContent = editing.cards.bust
+    ? "Cartes enregistrées : le joueur a sauté."
+    : `Cartes enregistrées : ${nums.length ? nums.join(" + ") : "aucune"} → ${r.total}.`;
+}
+
+function saveEdit() {
+  const raw = $("editScore").value.trim().replace(/^-$/, "");
+  if (raw !== "" && !/^-?\d+$/.test(raw)) { toast("Score illisible — chiffres uniquement."); return; }
+  const r = state.rounds[editing.round];
+  if (!r) { closeSheet("editOverlay"); return; }
+  r.entries[editing.playerId] = {
+    cards: editing.cards,
+    score: raw === "" ? 0 : parseInt(raw, 10),
+    manual: !editing.cards
+  };
+  save();
+  closeSheet("editOverlay");
+  renderGame();
+  toast(`Manche ${editing.round + 1} corrigée.`);
+}
+
+/* ═══════════════════════════════════════════
+   RAPPEL DES RÈGLES
+   ═══════════════════════════════════════════ */
+function openRules() {
+  const veng = state.variant === "vengeance";
+  const li = (k, d) => `<li><span class="k">${k}</span><span class="d">${d}</span></li>`;
+  let h = `<p class="hint" style="margin-bottom:4px">Variante <b>${veng ? (state.merciless ? "Vengeance · Sans Pitié" : "Vengeance") : "Standard"}</b>.</p>`;
+
+  h += `<div class="rules-sec"><h4>Les cartes</h4><ul class="rules-list">`;
+  h += li(veng ? "0 à 13" : "0 à 12", "Chaque carte vaut sa valeur.");
+  if (veng) {
+    h += li("−2 à −10", "Cartes Malus : se retranchent du total.");
+    h += li("÷2", "<b>Divise par deux</b> le total, arrondi à l'inférieur. Cumulable.");
+    h += li("0", "Le Zéro : annule la manche, sauf si tu fais un Flip 7.");
+    h += li("13 🍀", "Porte-bonheur : autorise un second 13 sans sauter.");
+    h += li("7 ☠️", "Porte-malheur : défausse tout, il ne reste que le 7.");
+  } else {
+    h += li("+2 à +10", "Bonus : s'ajoutent au total.");
+    h += li("×2", "Double la somme des cartes chiffres uniquement.");
+  }
+  h += li("Flip 7", "7 cartes chiffres différentes : <b>+15 points</b>.");
+  h += `</ul></div>`;
+
+  h += `<div class="rules-sec"><h4>Ordre de calcul</h4><div class="rules-flow">`;
+  h += veng
+    ? `chiffres <em>→</em> Le Zéro <em>→</em> ÷2 <em>→</em> Malus <em>→</em> ${state.merciless ? "(pas de plancher)" : "plancher à 0"} <em>→</em> +15`
+    : `chiffres <em>→</em> ×2 <em>→</em> bonus <em>→</em> +15`;
+  h += `</div>`;
+  h += veng
+    ? `<p class="rules-note">Le ÷2 passe avant les Malus : il ne les divise donc pas. ${state.merciless ? "En Sans Pitié, le score peut descendre sous zéro." : "Les Malus ne font jamais descendre sous zéro."} Le bonus Flip 7 est toujours crédité en entier.</p>`
+    : `<p class="rules-note">Le ×2 ne double que les cartes chiffres, jamais les bonus ni le +15.</p>`;
+  h += `</div>`;
+
+  h += `<div class="rules-sec"><h4>La partie</h4><ul class="rules-list">`;
+  h += li("Bust", "Deux fois la même carte : le joueur saute et marque 0.");
+  h += li("Objectif", `Premier à <b>${state.target} points</b>.`);
+  h += li("Égalité", "Deux joueurs à égalité au sommet : on rejoue une manche.");
+  if (veng && state.merciless) h += li("Flip 7 🎁", "Tu peux infliger tes 15 points à un adversaire.");
+  h += `</ul></div>`;
+
+  h += `<p class="rules-note" style="margin-top:14px">L'app ne bloque jamais une saisie : elle signale les coups impossibles, mais l'arbitre reste la table.</p>`;
+
+  $("rulesBody").innerHTML = h;
+  openSheet("rulesOverlay");
+  setTimeout(() => $("rulesOverlay").querySelector(".modal").focus(), 60);
+}
+
 
 /* ═══════════════════════════════════════════
    VICTOIRE & PARTAGE
@@ -1871,15 +2089,26 @@ $("newGameBtn").onclick = () => { closeVictory(); resetAll(); };
 $("closeVictoryBtn").onclick = () => closeVictory();
 $("confirmYes").onclick = () => closeConfirm(true);
 $("confirmNo").onclick = () => closeConfirm(false);
+$("rulesBtnSetup").onclick = openRules;
+$("rulesBtnGame").onclick = openRules;
+$("rulesCloseBtn").onclick = () => closeSheet("rulesOverlay");
+$("editCancelBtn").onclick = () => closeSheet("editOverlay");
+$("editSaveBtn").onclick = saveEdit;
+$("editCardsBtn").onclick = () => openCalc(editing.playerId, "edit");
+$("editScore").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); saveEdit(); } });
 
 $("calcOverlay").addEventListener("click", e => { if (e.target.id === "calcOverlay") closeCalc(); });
 $("confirmOverlay").addEventListener("click", e => { if (e.target.id === "confirmOverlay") closeConfirm(false); });
+$("editOverlay").addEventListener("click", e => { if (e.target.id === "editOverlay") closeSheet("editOverlay"); });
+$("rulesOverlay").addEventListener("click", e => { if (e.target.id === "rulesOverlay") closeSheet("rulesOverlay"); });
 
 document.addEventListener("keydown", e => {
   if (e.key !== "Escape") return;
   const top = sheetStack[sheetStack.length - 1];
   if (top === "confirmOverlay") closeConfirm(false);
   else if (top === "calcOverlay") closeCalc();
+  else if (top === "editOverlay") closeSheet("editOverlay");
+  else if (top === "rulesOverlay") closeSheet("rulesOverlay");
   else if (top === "victoryOverlay") closeVictory();
 });
 
